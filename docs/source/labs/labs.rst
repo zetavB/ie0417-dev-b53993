@@ -1,7 +1,7 @@
 Laboratorios
 ============
 
-Estos son enunciados de los laboratorios del curso.
+Estos son los reportes de los laboratorios del curso.
 
 .. toctree::
    :maxdepth: 2
