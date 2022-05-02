@@ -121,3 +121,13 @@ Un proxy es una excelente opcion para implementar la capa de abstraccion entre l
 Command
 -------
 El patron de diseño Command se puede aplicar para desacoplar los procesos de ejecutar y enviar la informacion sobre comandos a dispositivos, y recibir las respuestas corresponientes. Para lograr esto es necesario que una clase command exista que contenga toda la informacion sobre un comando. Este elemento es lo que se comunicara al eieDevice para pedir una respuesta o que se ejecute alguna accion. Al contener toda la infromacion del comando, esto puede permitir abstraer la funcion para diferentes tipos de dispositivos, y tambien permite escalar el sistema facilmente. Al llegar esta señal generica de command al dispositivo este puede determinar si el comando es uno que soporta, ejecutar alguna accion, y retornar la respuesta correcta ante ese comando. En el caso de ser un comando no soportado se podria estandarizar una respuesta de `command not supported` que le indique al cliente que el comando que envio a este dispositivo no es soportado.
+
+Diagramas UML
+=============
+
+eieManager
+----------
+
+
+eieDevice
+---------
