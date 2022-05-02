@@ -102,3 +102,22 @@ Ahora debemos discutir las instancias de elementos del eieDevice. Se elijen las 
 
 Teneiendo estas consideraciones, pasamos al siguiente paso. Podemos determinar que estas funciones directamente soportan los requerimientos planteados en el proceso para eieDevice. Con esto damos por concluido el proceso de ADD.
 
+Patrones de Diseño
+==================
+..
+  * Explique cómo se puede aplicar el patrón de diseño `Proxy <https://en.wikipedia.org/wiki/Proxy_pattern>`_ para abstraer la interacción y comunicación con los dispositivos desde ``eieManager``.
+
+    * Dentro de los componentes sugeridos en la introducción, a cuáles se les puede relacionar con este patrón?
+
+  * Explique cómo se puede aplicar el patrón de diseño `Command <https://en.wikipedia.org/wiki/Command_pattern>`_ para desacoplar los procesos de:
+
+    * Encapsular la información requerida para ejecutar comandos en dispositivos específicos.
+    * Ejecutar los comandos y esperar la respuesta correspondiente.
+
+Proxy
+-----
+Un proxy es una excelente opcion para implementar la capa de abstraccion entre los dispositivos y el eieManager. El proxy funciona como un intermediario que puede ejecutar funciones antes de pasarlas al eieManager. Esto permitiria, por ejemplo, recibir una repuesta de un dispositivo en algun protocolo distinto del definido inicialmente, realizar la traduccion al protocolo deseado, y pasar esta salida al eieManager. Similarmente se puede implementar esto en la otra direccion, permitiendo que el eieManager envie un comando con RPC, por ejemplo, a un dispositivo que utilice un protocolo distinto sin que ninguno de los dos se de cuenta de que esto esta sucediendo. Los componentes a relacionarse serian ambos los eieDevice, como el posible Client. Es importante tener esta capa de abstraccion entre ambos debido a los requerimientos de modificabilidad del cliente. Al tener abstraccion entre los dispositivos y el eieManager se puede agregar una amplia variedad de dispositivos. Similarmente, con el cliente el API va a funcionar como esta capa Proxy de abstraccion. Esto permitira a cualquier cliente que programe un equipo en paralelo pueda acoplarse con el resto del sistema, siempre y cuando se utilice el API como capa de traduccion.
+
+Command
+-------
+El patron de diseño Command se puede aplicar para desacoplar los procesos de ejecutar y enviar la informacion sobre comandos a dispositivos, y recibir las respuestas corresponientes. Para lograr esto es necesario que una clase command exista que contenga toda la informacion sobre un comando. Este elemento es lo que se comunicara al eieDevice para pedir una respuesta o que se ejecute alguna accion. Al contener toda la infromacion del comando, esto puede permitir abstraer la funcion para diferentes tipos de dispositivos, y tambien permite escalar el sistema facilmente. Al llegar esta señal generica de command al dispositivo este puede determinar si el comando es uno que soporta, ejecutar alguna accion, y retornar la respuesta correcta ante ese comando. En el caso de ser un comando no soportado se podria estandarizar una respuesta de `command not supported` que le indique al cliente que el comando que envio a este dispositivo no es soportado.
