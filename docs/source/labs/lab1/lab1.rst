@@ -102,3 +102,21 @@ Ahora debemos discutir las instancias de elementos del eieDevice. Se elijen las 
 
 Teneiendo estas consideraciones, pasamos al siguiente paso. Podemos determinar que estas funciones directamente soportan los requerimientos planteados en el proceso para eieDevice. Con esto damos por concluido el proceso de ADD.
 
+Patrones de Diseño
+==================
+..
+  * Explique cómo se puede aplicar el patrón de diseño `Proxy <https://en.wikipedia.org/wiki/Proxy_pattern>`_ para abstraer la interacción y comunicación con los dispositivos desde ``eieManager``.
+
+    * Dentro de los componentes sugeridos en la introducción, a cuáles se les puede relacionar con este patrón?
+
+  * Explique cómo se puede aplicar el patrón de diseño `Command <https://en.wikipedia.org/wiki/Command_pattern>`_ para desacoplar los procesos de:
+
+    * Encapsular la información requerida para ejecutar comandos en dispositivos específicos.
+    * Ejecutar los comandos y esperar la respuesta correspondiente.
+
+Proxy
+-----
+
+
+Command
+-------
