@@ -24,6 +24,7 @@ Requerimientos
     * REQ-NF02: El eieManager debe soportar una amplia variedad de dispositivos, y que ademas estos se puedan agregar fácilmente sin cambios en el código.
     * REQ-NF03: El eieManager debe ser capaz de enviar una variedad de comandos en diferentes protocolos de comunicación, y que estos ademas se puedan expander fácilmente sin cambios en el código. Inicialmente se utilizara el protocolo RPC.
     * REQ-NF04: Se debe de priorizar el desarrollo del API para que el equipo externo que desarrolla la aplicación móvil pueda trabajar en paralelo.
+    * REQ-NF05: Los eieDevice deben de ser capaces de funcionar con diferentes protocolos de comunicacion sin afectar el funcionamiento del API.
 
 Attribute-driven Design
 =======================
