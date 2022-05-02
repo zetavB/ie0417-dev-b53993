@@ -29,9 +29,11 @@ Requerimientos
 Attribute-driven Design
 =======================
 El primer paso es definir si los requerimientos obtenidos son suficientes y si están priorizados. En este caso podemos decir que si, y si. Pasando al segundo punto, es necesario separar el sistema en elementos. Escogeremos el eieManager y eieDevice como los dos elementos a descomponer para seguir el proceso.
+
 eieManager
 ----------
 Primero procedemos a tomar los requerimientos y clasificarlos conforme a su importancia del punto de vista de los `stakeholders` y a un nivel de arquitectura:
+
 * REQ-F01 (H,M)
 * REQ-F02 (H,M)
 * REQ-F03 (H,H)
@@ -40,6 +42,7 @@ Primero procedemos a tomar los requerimientos y clasificarlos conforme a su impo
 * REQ-NF02 (H,H)
 * REQ-NF03 (H,H)
 * REQ-NF04 (H,H)
+
 De estos elementos elegimos los siguientes como los `drivers` de la arquitectura a diseñar: REQ-F01, REQ-F02, REQ-F03, y REQ-NF03.
 El siguiente paso del proceso es escoger un concepto de diseño para cumplir los elementos elegidos. Tomando en cuenta estos requerimientos podemos decir que la mayoría de ellos se centran en la modificabilidad y flexibilidad en su uso. Esto implica que del punto de vista de los `stakeholders` lo principal es asegurarse que el sistema se pueda expander fácilmente. Tomando esto en cuenta se proponen dos patrones de diseño que pueden cumplir esta necesidad. Primero se tiene el adaptador, en este patron el eieManager funciona como un intermediario entre el API y los eieDevice. Esto con el fin de lidiar con los diferentes protocolos de ambos lados y garantizar la comunicación. El segundo patron que se propone es el mediador. Bajo este patron el eieManager funciona como el mediador entre el API y los dispositivos. SU funcionamiento es similar al adaptador excepto que provee mas libertad en los diferentes dispositivos que lo pueden llamar, y reduce la necesidad de modificar el eieManager para poder lidiar con diferentes tipos de dispositivo, ya que el adaptador adapta entre dos protocolos, no varios necesariamente.
 
@@ -73,8 +76,29 @@ Pasando al siguiente paso, podemos notar que los requerimientos funcionales se a
 
 eieDevice
 ---------
-
 Primero procedemos a tomar los requerimientos y clasificarlos conforme a su importancia del punto de vista de los `stakeholders` y a un nivel de arquitectura:
+
 * REQ-F04 (H,M)
 * REQ-NF05 (H,H)
-Escogemos estos dos elementos como `drivers` para la arquitectura a diseñar.
+
+Escogemos estos dos elementos como `drivers` para la arquitectura a diseñar. Ahora procedemos a elegir patrones de diseño para satisfacer estos requerimientos. En particular se eligen los patrones de fachada y fabrica. Este primero funciona para abstraer la interacción con el subsistema del dispositivo y enviar datos con un formato estándar. Este segundo funciona para crear una amplia variedad de objetos usando una sola clase fabricante. Se evalúan sus pros y contras a continuación:
+
++------------------------+-----------------------------------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------+
+|                        | Patron Fachada                                                                                                                    | Patron Fachada                                                                                       | Patron Fabrica                                                                                                        | Patron Fabrica                                                                                                                          |
++========================+===================================================================================================================================+======================================================================================================+=======================================================================================================================+=========================================================================================================================================+
+| Driver Arquitectonico  | Pros                                                                                                                              | Cons                                                                                                 | Pros                                                                                                                  | Cons                                                                                                                                    |
++------------------------+-----------------------------------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------+
+| REQ-F04                | Provee una capa de abstraccion para que el eieDevice reciba procese comandos estandar.                                            | Puede verse limitado en el caso de que no se defina el comportamiento ante comandos inesperados.     | La fabrica puede generar una variedad de eieDevices tal que todos puedan responder a comandos estandar particulares.  | La interaccion con ell device no tiene una capa de abstraccion necesariamente, lo cual puede llevar a dificultades.                     |
++------------------------+-----------------------------------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------+
+| REQ-NF05               | La fachada permite una abstraccion ocmpleta del funcionamiento interno del dispositivo facilitando el procesamiento de comandos.  | Esta implementacion puede ser laboriosa para que soporte una variedad de protoclos de comunicacion.  | La fabrica permite generar eieDevices tal que se trabaje con diferentes metodos de transmision de datos.              | Se debera sobrecargar los metodoos de recibo y envio de datos de las subclases de la fabrica para lidiar con comunicacion alternativa.  |
++------------------------+-----------------------------------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------+
+
+Tomando en cuenta estos factores, se elije utilizar el patron de Fachada, esto con el fin de abstraer las comunicaciones lo mas posible a nivel de dispositivo. Esto permite gran flexibilidad ya que al agregar un nuevo dispositivo de cualquier tipo se puede facilmente agregar una capa de traduccion al protocolo de comunicacion estandar, permitiendo agregar dispositivos sin modificar el codigo de eieManager.
+Ahora debemos discutir las instancias de elementos del eieDevice. Se elijen las siguientes:
+
+* TransportServer: Esta es la capa de abstraccion que se encarga de comunicarse con el TransportClient de eieManager. Esto es lo que vendria siendo la Fachada elegida como patron de diseño.
+* CommandManager: Esto lleva el registro de comandos soportados por el dispositivo, llama a su ejecuccion, y lidia con comandos desconocidos. Lo ideal en este elemento seria devolver una respuesta estandarizada que corresponda a `comannd not supported` tal que la capa de abstraccion pueda comunicar esta respuesta.
+* Command: Este elemento implementa la funcionalidad especifica del comando. Esto puede ser algo desde leer una señal de temperatura de un termistor, hasta accionar un motor que inicie la mezcla en un proceso quimico. Este command debe retornar algun mensaje indicando el estado o otro dato deseado, ademas de realizar la accion.
+
+Teneiendo estas consideraciones, pasamos al siguiente paso. Podemos determinar que estas funciones directamente soportan los requerimientos planteados en el proceso para eieDevice. Con esto damos por concluido el proceso de ADD.
+
