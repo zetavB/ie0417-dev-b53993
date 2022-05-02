@@ -15,20 +15,30 @@ Requerimientos
 ==============
 * Funcionales:
     * REQ-F01: El eieManager debe poder comunicarse con n cantidad de dispositivos del tipo eieDevice simultáneamente.
-    * REQ-F02: El eieManager debe poder enviar comandos a los dispositivos eieDevice a dispositivos específicos y también en `broadcast` usando RPC.
+    * REQ-F02: El eieManager debe poder enviar comandos a los dispositivos eieDevice a dispositivos específicos y también en `broadcast`.
     * REQ-F03: El eieManager debe exponer una API para que clientes externos puedan enviar comandos y recibir respuestas de los dispositivos eieDevice.
-    * REQ-F04: Los eieDevice deben de ser capaces de recibir comandos predefinidos y poder dar una respuesta valida a un comando que no reconocen.
+    * REQ-F04: Los eieDevice deben de ser capaces de recibir comandos predefinidos y poder dar una respuesta valida a cualquier comando.
     * REQ-F05: El eieManager debe de poder reiniciar ante un fallo que genere el cierre del proceso.
 * No Funcionales:
     * REQ-NF01: El API expuesto debe ser fácilmente ingerible tal que un equipo de desarrollo pueda preparar una aplicación móvil en paralelo.
     * REQ-NF02: El eieManager debe soportar una amplia variedad de dispositivos, y que ademas estos se puedan agregar fácilmente sin cambios en el código.
-    * REQ-NF03: El eieManager debe ser capaz de enviar una variedad de comandos en diferentes protocolos de comunicación, y que estos ademas se puedan expander fácilmente sin cambios en el código.
+    * REQ-NF03: El eieManager debe ser capaz de enviar una variedad de comandos en diferentes protocolos de comunicación, y que estos ademas se puedan expander fácilmente sin cambios en el código. Inicialmente se utilizara el protocolo RPC.
     * REQ-NF04: Se debe de priorizar el desarrollo del API para que el equipo externo que desarrolla la aplicación móvil pueda trabajar en paralelo.
 
 Attribute-driven Design
 =======================
+El primer paso es definir si los requerimientos obtenidos son suficientes y si están priorizados. En este caso podemos decir que si, y si. Pasando al segundo punto, es necesario separar el sistema en elementos. Escogeremos el eieManager y eieDevice como los dos elementos a descomponer para seguir el proceso.
 eieManager
 ----------
+Primero procedemos a tomar los requerimientos y clasificarlos conforme a su importancia del punto de vista de los `stakeholders` y a un nivel de arquitectura:
+* REQ-F01 (H,M)
+* REQ-F02 (H,M)
+* REQ-F03 (H,H)
+* REQ-F05 (M,L)
+* REQ-NF01 (H,H)
+* REQ-NF02 (H,H)
+* REQ-NF03 (H,H)
+* REQ-NF04 (H,H)
 
 eieDevice
 ---------
