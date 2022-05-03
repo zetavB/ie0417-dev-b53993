@@ -125,9 +125,139 @@ El patron de diseño Command se puede aplicar para desacoplar los procesos de ej
 Diagramas UML
 =============
 
-eieManager
-----------
+Diagrama de Clases
+------------------
+
+.. uml::
+
+  @startuml
+
+  title Diagrama de Clases
 
 
-eieDevice
----------
+  class EieManager {
+    +void loadConfig()
+    +command sendCommand(command)
+
+  }
+
+  class EieDevice {
+    +command execute(command c)
+
+  }
+
+  class ConfigHandler {
+    +void addDevice()
+    +void removeDevice()
+    +string* protocol
+    +string* devices
+
+  }
+
+  class APIServer {
+    +void sendCommand(command)
+    +void recieveResponse(command)
+
+  }
+
+  class CommandRegistry {
+    +string commandResponse(command)
+    +string* commands
+
+  }
+
+  class DeviceManager {
+    +database devices
+
+  }
+
+  class GroupManager {
+    +database groups
+
+  }
+
+  class CommandInvoker {
+    +void execute(command)
+
+  }
+
+  class TransportClient {
+    +void convertToRPC(command)
+    +void convertFromRPC(command)
+    +void send(command)
+    +command recieve()
+
+  }
+
+  class DatabaseHandler {
+    +void addItem(name, protocol, position)
+    +void deleteItem(name)
+    +database data
+    +item get(name)
+
+  }
+
+  class TransportServer {
+    +void convertToRPC(command)
+    +void convertFromRPC(command)
+    +void send(command)
+    +void recieve(command)
+
+  }
+
+  class CommandManager {
+    +command processCommand(command)
+    +string* supportedCommands
+    }
+
+  EieManager <|- EieDevice
+  TransportServer *.. EieDevice
+  EieManager <.. TransportClient
+  CommandManager *.. Command
+  Command <.. TransportServer
+  Command <.. TransportClient
+  TransportClient <|- TransportServer
+  DeviceManager <.. EieDevice
+  Command <|- CommandRegistry
+  CommandInvoker <.. APIServer
+  Command <.. CommandInvoker
+  EieManager <|- APIServer
+  GroupManager <.. EieManager
+  GroupManager <.. EieDevice
+  GroupManager <|- DeviceManager
+  GroupManager <.. DatabaseHandler
+  DeviceManager<.. DatabaseHandler
+  EieManager <.. ConfigHandler
+  EieManager <.. CommandManager
+  EieManager <.. CommandRegistry
+
+  @enduml
+
+Diagrama de secuencia
+---------------------
+.. uml::
+  
+  @startuml
+  Alice -> Bob: Authentication Request
+
+  alt successful case
+
+      Bob -> Alice: Authentication Accepted
+
+  else some kind of failure
+
+      Bob -> Alice: Authentication Failure
+      group My own label
+      Alice -> Log : Log attack start
+          loop 1000 times
+              Alice -> Bob: DNS Attack
+          end
+      Alice -> Log : Log attack end
+      end
+
+  else Another type of failure
+
+    Bob -> Alice: Please repeat
+
+  end
+  @enduml
