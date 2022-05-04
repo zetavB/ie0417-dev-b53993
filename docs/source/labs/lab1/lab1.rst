@@ -234,30 +234,71 @@ Diagrama de Clases
   @enduml
 
 Diagrama de secuencia
----------------------
+=====================
+
+Cliente envia mensaje a un dispositivo
+--------------------------------------
+
 .. uml::
   
   @startuml
-  Alice -> Bob: Authentication Request
+  Client -> APIServer: Send Command(device)
+  APIServer -> CommandRegistry: Forward translated command
+  alt Command supported
+      CommandRegistry -> DeviceManager: Verify command supported and execute
+      DeviceManager -> CommandInvoker: Determine device path
+      CommandInvoker -> TransportClient: Execute command on particular device
+      TransportClient -> TransportServer: Send command over RPC
+      TransportServer -> CommandManager: Recieve command
+      CommandManager -> Command: Verify command valid and execute
+      alt Command supported
+        Command -> TransportServer: Execute command and send response
+        TransportServer -> TransportClient: Forward response
+        TransportClient -> APIServer: Forward response
+        APIServer -> Client: Translate response and forward
+      else Command not supported
+        TransportServer -> TransportClient: Send command not valid
+        TransportClient -> APIServer: Send command not valid
+        APIServer -> Client: Recieve command not valid
+  end
+        
+  else Command not supported
+      CommandRegistry -> APIServer: Send command not valid
+      APIServer -> Client: Recieve command not valid    
+  end
+  @enduml
 
-  alt successful case
+Cliente envia mensaje en broadcast
+----------------------------------
 
-      Bob -> Alice: Authentication Accepted
+.. uml::
 
-  else some kind of failure
-
-      Bob -> Alice: Authentication Failure
-      group My own label
-      Alice -> Log : Log attack start
-          loop 1000 times
-              Alice -> Bob: DNS Attack
-          end
-      Alice -> Log : Log attack end
+  @startuml
+  Client -> APIServer: Send Command(device)
+  APIServer -> CommandRegistry: Forward translated command
+  alt Command supported
+      CommandRegistry -> GroupManager: Verify group, number of devices 'n', and execute
+      loop n times
+        GroupManager -> DeviceManager: Verify command supported and execute
+        DeviceManager -> CommandInvoker: Determine device path
+        CommandInvoker -> TransportClient: Execute command on particular device
+        TransportClient -> TransportServer: Send command over RPC
+        TransportServer -> CommandManager: Recieve command
+        CommandManager -> Command: Verify command valid and execute
+        alt Command supported
+          Command -> TransportServer: Execute command and send response
+          TransportServer -> TransportClient: Forward response
+          TransportClient -> DatabaseHandler: Queue up responses
+        else Command not supported
+          TransportServer -> TransportClient: Send command not valid
+          TransportClient -> DatabaseHandler: Queue up responses
       end
-
-  else Another type of failure
-
-    Bob -> Alice: Please repeat
-
+      DatabaseHandler -> APIServer: Send responses in order
+      APIServer -> Client: Translate responses and forward
+  end
+        
+  else Command not supported
+      CommandRegistry -> APIServer: Send command not valid
+      APIServer -> Client: Recieve command not valid    
   end
   @enduml
