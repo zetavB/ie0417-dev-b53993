@@ -121,3 +121,184 @@ Un proxy es una excelente opcion para implementar la capa de abstraccion entre l
 Command
 -------
 El patron de diseño Command se puede aplicar para desacoplar los procesos de ejecutar y enviar la informacion sobre comandos a dispositivos, y recibir las respuestas corresponientes. Para lograr esto es necesario que una clase command exista que contenga toda la informacion sobre un comando. Este elemento es lo que se comunicara al eieDevice para pedir una respuesta o que se ejecute alguna accion. Al contener toda la infromacion del comando, esto puede permitir abstraer la funcion para diferentes tipos de dispositivos, y tambien permite escalar el sistema facilmente. Al llegar esta señal generica de command al dispositivo este puede determinar si el comando es uno que soporta, ejecutar alguna accion, y retornar la respuesta correcta ante ese comando. En el caso de ser un comando no soportado se podria estandarizar una respuesta de `command not supported` que le indique al cliente que el comando que envio a este dispositivo no es soportado.
+
+Diagramas UML
+=============
+
+Diagrama de Clases
+------------------
+
+.. uml::
+
+  @startuml
+
+  title Diagrama de Clases
+
+
+  class EieManager {
+    +void loadConfig()
+    +command sendCommand(command)
+
+  }
+
+  class EieDevice {
+    +command execute(command c)
+
+  }
+
+  class ConfigHandler {
+    +void addDevice()
+    +void removeDevice()
+    +string* protocol
+    +string* devices
+
+  }
+
+  class APIServer {
+    +void sendCommand(command)
+    +void recieveResponse(command)
+
+  }
+
+  class CommandRegistry {
+    +string commandResponse(command)
+    +string* commands
+
+  }
+
+  class DeviceManager {
+    +database devices
+
+  }
+
+  class GroupManager {
+    +database groups
+
+  }
+
+  class CommandInvoker {
+    +void execute(command)
+
+  }
+
+  class TransportClient {
+    +void convertToRPC(command)
+    +void convertFromRPC(command)
+    +void send(command)
+    +command recieve()
+
+  }
+
+  class DatabaseHandler {
+    +void addItem(name, protocol, position)
+    +void deleteItem(name)
+    +database data
+    +item get(name)
+
+  }
+
+  class TransportServer {
+    +void convertToRPC(command)
+    +void convertFromRPC(command)
+    +void send(command)
+    +void recieve(command)
+
+  }
+
+  class CommandManager {
+    +command processCommand(command)
+    +string* supportedCommands
+    }
+
+  EieManager <|- EieDevice
+  TransportServer *.. EieDevice
+  EieManager <.. TransportClient
+  CommandManager *.. Command
+  Command <.. TransportServer
+  Command <.. TransportClient
+  TransportClient <|- TransportServer
+  DeviceManager <.. EieDevice
+  Command <|- CommandRegistry
+  CommandInvoker <.. APIServer
+  Command <.. CommandInvoker
+  EieManager <|- APIServer
+  GroupManager <.. EieManager
+  GroupManager <.. EieDevice
+  GroupManager <|- DeviceManager
+  GroupManager <.. DatabaseHandler
+  DeviceManager<.. DatabaseHandler
+  EieManager <.. ConfigHandler
+  EieManager <.. CommandManager
+  EieManager <.. CommandRegistry
+
+  @enduml
+
+Diagrama de secuencia
+=====================
+
+Cliente envia mensaje a un dispositivo
+--------------------------------------
+
+.. uml::
+  
+  @startuml
+  Client -> APIServer: Send Command(device)
+  APIServer -> CommandRegistry: Forward translated command
+  alt Command supported
+      CommandRegistry -> DeviceManager: Verify command supported and execute
+      DeviceManager -> CommandInvoker: Determine device path
+      CommandInvoker -> TransportClient: Execute command on particular device
+      TransportClient -> TransportServer: Send command over RPC
+      TransportServer -> CommandManager: Recieve command
+      CommandManager -> Command: Verify command valid and execute
+      alt Command supported
+        Command -> TransportServer: Execute command and send response
+        TransportServer -> TransportClient: Forward response
+        TransportClient -> APIServer: Forward response
+        APIServer -> Client: Translate response and forward
+      else Command not supported
+        TransportServer -> TransportClient: Send command not valid
+        TransportClient -> APIServer: Send command not valid
+        APIServer -> Client: Recieve command not valid
+  end
+        
+  else Command not supported
+      CommandRegistry -> APIServer: Send command not valid
+      APIServer -> Client: Recieve command not valid    
+  end
+  @enduml
+
+Cliente envia mensaje en broadcast
+----------------------------------
+
+.. uml::
+
+  @startuml
+  Client -> APIServer: Send Command(device)
+  APIServer -> CommandRegistry: Forward translated command
+  alt Command supported
+      CommandRegistry -> GroupManager: Verify group, number of devices 'n', and execute
+      loop n times
+        GroupManager -> DeviceManager: Verify command supported and execute
+        DeviceManager -> CommandInvoker: Determine device path
+        CommandInvoker -> TransportClient: Execute command on particular device
+        TransportClient -> TransportServer: Send command over RPC
+        TransportServer -> CommandManager: Recieve command
+        CommandManager -> Command: Verify command valid and execute
+        alt Command supported
+          Command -> TransportServer: Execute command and send response
+          TransportServer -> TransportClient: Forward response
+          TransportClient -> DatabaseHandler: Queue up responses
+        else Command not supported
+          TransportServer -> TransportClient: Send command not valid
+          TransportClient -> DatabaseHandler: Queue up responses
+      end
+      DatabaseHandler -> APIServer: Send responses in order
+      APIServer -> Client: Translate responses and forward
+  end
+        
+  else Command not supported
+      CommandRegistry -> APIServer: Send command not valid
+      APIServer -> Client: Recieve command not valid    
+  end
+  @enduml
