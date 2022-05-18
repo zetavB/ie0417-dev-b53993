@@ -1,5 +1,8 @@
 import logging
 from random import choice
+from fastapi import FastAPI
+from typing import Dict, Optional
+from pydantic import BaseModel, Json
 
 from . import command
 from .args import parse_args
@@ -33,20 +36,50 @@ def main():
     sensor_cmd_runner.start()
     alert_cmd_runner.start()
 
-    # Set up sensor analyzer with "above average threshold alert" strategy
-    analyzer = avt.SensorAvgThreshAnalyzer(avg_thresh=analyzer_avg_thresh)
-    avt.set_alert_handle_strategy(analyzer, alert_cmd_runner)
-    avt.set_above_compare_strategy(analyzer)
+    # Start API
+    app = FastAPI()
+    @app.get("/")
+    async def root():
+        return {"message": "Hello World!"}
+
+    @app.post("/devices/")
+    async def addDevice(name: str, type: str):
+        sensor_mgr.create_new_sensor(name, type)
+        return "Device added"
+
+    @app.delete("/devices/{devId}")
+    async def deleteDevice(devId: str):
+        sensor_mgr.delete_sensor(devId)
+        return "Device deleted"
+
+    @app.put("/devices/{devId}")
+    async def updateDevice(devId: str, changes: list):
+        tempList = sensor_mgr.update_sensor(devId, changes)
+        return "Device changed"
+
+    @app.get("/devices/")
+    async def showDevices():
+        return dict(zip(sensor_mgr.get_sensor_names(), sensor_mgr.get_sensor_types()))
+
+    @app.get("/devices/{devId}")
+    async def showDevice(devId: str):
+        tempList = sensor_mgr.get_sensor_details(devId)
+        return tempList
+
+    # # Set up sensor analyzer with "above average threshold alert" strategy
+    # analyzer = avt.SensorAvgThreshAnalyzer(avg_thresh=analyzer_avg_thresh)
+    # avt.set_alert_handle_strategy(analyzer, alert_cmd_runner)
+    # avt.set_above_compare_strategy(analyzer)
 
     # Generate read commands for temp sensors
 
-    print(sensor_mgr.get_sensor_names())
-    temp_sensor_names = sensor_mgr.get_sensor_names_per_type(sensor_type_name)
-    for _ in range(num_read_commands):
-        rand_sensor_name = choice(temp_sensor_names)
-        read_cmd = sensor_mgr.create_sensor_read_cmd(rand_sensor_name,
-                                                     analyzer)
-        sensor_cmd_runner.send(read_cmd)
+    # print(sensor_mgr.get_sensor_names())
+    # temp_sensor_names = sensor_mgr.get_sensor_names_per_type(sensor_type_name)
+    # for _ in range(num_read_commands):
+    #     rand_sensor_name = choice(temp_sensor_names)
+    #     read_cmd = sensor_mgr.create_sensor_read_cmd(rand_sensor_name,
+    #                                                  analyzer)
+    #     sensor_cmd_runner.send(read_cmd)
 
     # Teardown command runners
     sensor_cmd_runner.stop()

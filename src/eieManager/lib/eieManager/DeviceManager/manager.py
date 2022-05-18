@@ -47,6 +47,19 @@ class SensorManager:
 
         self._init_sensors_per_type()
 
+    def create_new_sensor(self, name: str, stype: str):
+        self.sensors[name] = self.sensor_factory(name, stype)
+
+    def update_sensor(self, name: str, changes: list):
+        self.sensors[name].update(name, changes)
+    
+    def get_sensor_details(self, name: str):
+        returnal = [self.sensors[name].name, self.sensors[name].type, self.sensors[name].conexion, self.sensors[name].commands]
+        return returnal
+
+    def delete_sensor(self, name: str):
+        self.sensors.pop(name)
+
     def get_sensor_types(self) -> List[str]:
         """
         Returns the list of sensor types.

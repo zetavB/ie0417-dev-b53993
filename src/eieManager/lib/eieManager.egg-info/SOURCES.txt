@@ -4,7 +4,6 @@ README.md
 requirements.txt
 setup.py
 config/initConfig.json
-config/sensors_cfg.json
 lib/eieManager/__init__.py
 lib/eieManager/args.py
 lib/eieManager/command.py
