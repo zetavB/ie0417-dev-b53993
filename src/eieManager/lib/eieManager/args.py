@@ -60,13 +60,23 @@ def parse_args(argv=None):
 
     parser.add_argument(
         '-c', '--config',
-        default="config/initConfig.json",
+        default="eieManager/config/initConfig.json",
         help='Sensors configuration file',
     )
     parser.add_argument(
         '-t', '--sensor_type',
         default="temperature",
         help='Sensor type to read',
+    )
+    parser.add_argument(
+        '--reload',
+        default="",
+        help='Uvicorn function',
+    )
+    parser.add_argument(
+        '--host',
+        default="",
+        help='Uvicorn function',
     )
 
     args = parser.parse_args(argv)

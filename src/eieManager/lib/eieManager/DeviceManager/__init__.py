@@ -1,3 +1,3 @@
 """
-sensor module entry point.
+device module entry point.
 """
