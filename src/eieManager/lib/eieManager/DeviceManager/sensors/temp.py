@@ -11,3 +11,9 @@ class TempSensor(Sensor):
 
     def read(self) -> float:
         return randint(0, 100)
+
+    def update(self, changes: list):
+        self._name = changes[0]
+        self._type = changes[1]
+        self._conexion = changes[2]
+        pass

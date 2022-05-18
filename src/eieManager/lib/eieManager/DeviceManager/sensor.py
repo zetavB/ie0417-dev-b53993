@@ -43,6 +43,13 @@ class Sensor(ABC):
         return self._commands
 
     @abstractmethod
+    def update(self, changes: list):
+        """ self._name = changes[0]
+        self._type = changes[1]
+        self._conexion = changes[2] """
+        pass
+
+    @abstractmethod
     def read(self) -> float:
         """
         Reads the sensor.

@@ -11,3 +11,8 @@ class LevelSensor(Sensor):
 
     def read(self) -> float:
         return randint(1, 50)
+
+    def update(self, changes: list):
+        self._name = changes[0]
+        self._type = changes[1]
+        self._conexion = changes[2]

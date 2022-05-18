@@ -47,18 +47,22 @@ class SensorManager:
 
         self._init_sensors_per_type()
 
-    def create_new_sensor(self, name: str, stype: str):
-        self.sensors[name] = self.sensor_factory(name, stype)
+    def create_new_sensor(self, changes: list):
+        self.sensors[changes[0]] = self.sensor_factory(changes[0], changes[1])
+        self.sensors_per_type[changes[1]][changes[0]] = self.sensors[changes[0]]
 
     def update_sensor(self, name: str, changes: list):
-        self.sensors[name].update(name, changes)
+        self.sensors[name].update(changes)
     
     def get_sensor_details(self, name: str):
-        returnal = [self.sensors[name].name, self.sensors[name].type, self.sensors[name].conexion, self.sensors[name].commands]
+        returnal = [self.sensors[name].name(), self.sensors[name].type(), self.sensors[name].conexion(), self.sensors[name].commands()]
         return returnal
 
     def delete_sensor(self, name: str):
+        stype = self.sensors[name].type()
+        self.sensors_per_type[stype].pop(name)
         self.sensors.pop(name)
+        #self.sensors_per_type['level'].pop(name)
 
     def get_sensor_types(self) -> List[str]:
         """
