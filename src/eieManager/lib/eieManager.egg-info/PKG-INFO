@@ -1,0 +1,19 @@
+Metadata-Version: 2.1
+Name: eieManager
+Version: 0.0.1
+Summary: sensor_commands is an example python package for the IE0417 course @ EIE, UCR
+Home-page: http://ie0417.rtfd.org/
+Author: Jordi Louzao von Breymann
+Author-email: jordi.louzao@ucr.ac.cr
+License: UNKNOWN
+Description: # Sensor commands package
+        
+        This is an example package for the sensor commands modules. 
+        
+Platform: UNKNOWN
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Natural Language :: English
+Classifier: Operating System :: POSIX :: Linux
+Classifier: Programming Language :: Python :: 3
+Description-Content-Type: text/x-rst

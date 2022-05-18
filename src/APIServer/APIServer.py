@@ -10,7 +10,7 @@ class Device(BaseModel):
     commands: list
     conexion: str
 
-list = ["tester1", "tester2"]
+list = ["tester1", "tester2", "tester3", "tester4"]
 
 deviceList = {
 	name: Device(
@@ -22,14 +22,9 @@ deviceList = {
 }
 
 @app.post("/devices/")
-async def addDevice(deviceId, type, location, commands):
-    device : Device(
-        name = deviceId,
-        type = type,
-		conexion = location,
-		commands = commands
-    )
-    return device
+async def addDevice(device: Device):
+	deviceList[device.name] = device
+	return device
 
 @app.get("/devices/")
 async def showDevices():
