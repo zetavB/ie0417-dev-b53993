@@ -1,0 +1,40 @@
+{
+    "devices": [
+        {
+            "name": "tester1",
+            "type": "temperature",
+            "commands":["stand","sit","play","sleep"],
+            "conexion":"192.168.1.1:1337"
+        },
+        {
+            "name": "tester2",
+            "type": "temperature",
+            "commands":["stand","sit","play","sleep"],
+            "conexion":"192.168.1.1:1337"
+        },
+        {
+            "name": "tester3",
+            "type": "temperature",
+            "commands":["stand","sit","play","sleep"],
+            "conexion":"192.168.1.1:1337"
+        },
+        {
+            "name": "tester4",
+            "type": "temperature",
+            "commands":["stand","sit","play","sleep"],
+            "conexion":"192.168.1.1:1337"
+        },
+        {
+            "name": "tester5",
+            "type": "level",
+            "commands":["stand","sit","play","sleep"],
+            "conexion":"192.168.1.1:1337"
+        },
+        {
+            "name": "tester6",
+            "type": "level",
+            "commands":["stand","sit","play","sleep"],
+            "conexion":"192.168.1.1:1337"
+        }
+    ]
+}
