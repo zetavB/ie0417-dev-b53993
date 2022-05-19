@@ -12,7 +12,8 @@ class Sensor(ABC):
     :param str stype: Type of the sensor.
     :param str unit: Measurement unit of the sensor.
     """
-    def __init__(self, name: str, stype: str, conexion: str, commands: list) -> None:
+    def __init__(self, name:
+                 str, stype: str, conexion: str, commands: list) -> None:
         self._name = name
         self._type = stype
         self._commands = commands
@@ -102,5 +103,4 @@ class SensorReadCommand(Command):
             self.analyzer.update(value)
         print(f"Device Response: [{stype}] {name} @ {conexion}")
         print("Commands Available:")
-        print(*commands, sep = ", ")
-        
+        print(*commands, sep=", ")

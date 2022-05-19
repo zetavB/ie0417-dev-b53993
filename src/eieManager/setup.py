@@ -79,7 +79,7 @@ def find_requirements(filename):
 
 
 setup(
-    name='eieManager',
+    name='eieManager-zetavB',
     version=find_version('lib/eieManager/__init__.py'),
     package_dir={'': 'lib'},
     packages=find_packages('lib'),
@@ -92,12 +92,12 @@ setup(
     author='Jordi Louzao von Breymann',
     author_email='jordi.louzao@ucr.ac.cr',
     description=(
-        'sensor_commands is an example python package for the '
+        'A python package for the '
         'IE0417 course @ EIE, UCR'
     ),
     long_description=read('README.md'),
     long_description_content_type='text/x-rst',
-    url='http://ie0417.rtfd.org/',
+    url='http://ie0417-dev-b53993.rtfd.org/',
 
     classifiers=[
         'Intended Audience :: Developers',
