@@ -19,7 +19,8 @@ struct command_info *command_create(const char *name, void *priv, command_fn exe
         free(cmd);
         return NULL;
     }
-    strncpy(cmd->name, name, MSG_CMD_MAX_SIZE);
+    //strncpy(cmd->name, name, MSG_CMD_MAX_SIZE);
+    cmd->name = name;
     cmd->priv = priv;
     cmd->execute = execute;
     return cmd;
@@ -34,13 +35,14 @@ void command_execute(struct command_info *cmd, char *req_msg, char *ret_msg){
 }
 
 static void exec_func_msg(const char *name, void *priv, const char *req_msg, char *resp_msg){
-    resp_msg = cJSON_CreateString("Esto fue un mensaje");
+    cJSON *temp = cJSON_CreateString("Esto fue un mensaje");
+    resp_msg = temp->valuestring;
 }
 
 static void exec_func_pipo(const char *name, void *priv, const char *req_msg, char *resp_msg){
     cJSON *value = NULL;
     int num_args = sizeof(priv);
-    char *tempArr[sizeof(priv)] = priv;
+    char **tempArr = (char**)priv;
 
     cJSON *object = cJSON_CreateObject();
     for(int i=0; i < num_args; i++){
@@ -53,7 +55,8 @@ static void exec_func_pipo(const char *name, void *priv, const char *req_msg, ch
 
 struct command_info *message_command_create(void *json){
     char *message = "message";
-
+    cJSON *arg = NULL;
+    cJSON *obj = NULL;
     cJSON *cjson = NULL;
     cJSON *args = NULL;
     int num_args = 0;
@@ -74,7 +77,6 @@ struct command_info *message_command_create(void *json){
     num_args = cJSON_GetArraySize(args);
     char* results[num_args];
     for(int i = 0; i < num_args; i++){
-        cJSON *arg, *obj;
         char *value;
         arg = cJSON_GetArrayItem(args, i);
 
