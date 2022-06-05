@@ -93,13 +93,11 @@ void* msg_server_fn(void *arg)
         rep_frame = zframe_new(NULL, sizeof(struct test_msg_rep));
         rep = (struct test_msg_rep *)zframe_data(rep_frame);
         // Write response data
-        print("Buffer:\n")
         for (int i = 0; i<=strlen(header->cmd_name); i++){
           rep->resp_name[i] = header->cmd_name[i];
         }
         for (int i = 0; i<=strlen(header->buff); i++){
-          rep->resp_buff[i] = header->buff[i];
-          printf(rep->resp_buff[i])
+
         }
         //rep->resp_name = header->cmd_name;
         rep->resp_size = header->payload_size;
