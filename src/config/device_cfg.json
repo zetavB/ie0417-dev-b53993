@@ -1,0 +1,9 @@
+{
+    "devices": [
+        {
+            "device": "Dev1",
+            "request_source": "DeviceManager",
+            "arg3": "something else"
+        }
+    ]
+}
