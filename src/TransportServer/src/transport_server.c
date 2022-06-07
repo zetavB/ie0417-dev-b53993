@@ -12,6 +12,7 @@
 #include <errno.h>
 #include <czmq.h>
 #include <cjson/cJSON.h>
+#include "../include/transport_server.h"
 
 /* Message types to set in the test_msg_req type field */
 enum test_msg_type {
@@ -21,44 +22,8 @@ enum test_msg_type {
   TEST_MSG_TYPE_MAX,
 };
 
-/* Message request structure */
-struct cmd_request_hdr {
-    char cmd_name [100];
-    uint32_t payload_size;
-    char buff[100];
-} __attribute__((packed));
-/* Message response structure */
-struct test_msg_rep {
-    char resp_name [100];
-    uint32_t resp_size;
-    char resp_buff[100];
-
-} __attribute__((packed));
-
-/*struct mem_pointers {
-    char * request_msg;
-    char * payload_data;
-};*/
-
-/* Server thread data */
-struct server_data {
-    pthread_t tid;
-    zsock_t *server;
-};
-
-/*static cJSON *parse_cjson(char *buffer, size_t *buffer_length){
-  cJSON *cjson = NULL;
-  buffer = malloc(*buffer_length);
-  cjson = cJSON_ParseWithLength(buffer, *buffer_length);
-  if (cjson == NULL) {
-      fprintf(stderr, "Failed to parse json file\n");
-      return NULL;
-  }
-  return cjson;
-}*/
 void* msg_server_fn(void *arg)
 {
-    //cJSON *cjson = NULL;
     int ret;
     struct server_data *rdata = arg;
     printf("Thread %ld started\n", rdata->tid);
@@ -68,11 +33,17 @@ void* msg_server_fn(void *arg)
 
     /* Loop processing messages while CZMQ is not interrupted */
     while (!zsys_interrupted) {
-        zframe_t *req_frame, *rep_frame;
+      /*Pointers to the structures*/
+        struct payload *payload;
         struct cmd_request_hdr *header;
-        //struct payload *payload;
         struct test_msg_rep *rep;
-        //struct mem_pointers *mp;
+
+      /*Memory allocation*/
+        zframe_t *req_frame, *rep_frame;
+        payload = (struct payload *)calloc(1, sizeof(struct payload));
+        header = (struct cmd_request_hdr *)calloc(1, sizeof(struct cmd_request_hdr));
+        //struct payload *payload;
+        rep = (struct test_msg_rep *)calloc(1, sizeof(struct test_msg_rep));
 
         // Block waiting for a new message frame
         req_frame = zframe_recv(rdata->server);
@@ -80,27 +51,36 @@ void* msg_server_fn(void *arg)
             fprintf(stderr, "req_frame is NULL\n");
             goto out;
         }
+        /*Copy the memory address of the received data in header*/
         header = (struct cmd_request_hdr *)zframe_data(req_frame);
-        //header->buff = (char*)malloc(header->payload_size*sizeof(char));
-        //mp->request_msg = &header->cmd_name[0];
-        //mp->payload_data = &mp->request_msg + sizeof(struct cmd_request_hdr);
-        //payload = (struct payload *)zframe_data(req_frame);
-        //payload = (struct payload*)zframe_data(req_frame);
-        //cjson = parse_cjson(payload->buffer, size_t(header->payload_size));
+        /*Memory allocation*/
+        payload->buff = (char *)malloc(header->payload_size*sizeof(char));
+        /*Calculate the offset (request size - payload_size)*/
+        payload->offset = zframe_size(req_frame) - header->payload_size;
+        printf("%i\n", payload->offset);
+        /*Copy memory from the bytestream + offset to the payload pointer*/
+        memcpy(payload->buff, zframe_data(req_frame)+payload->offset, 94);
+        if (!req_frame) {
+            fprintf(stderr, "req_frame is NULL\n");
+            goto out;
+        }
         printf("Received request [command_name: %s, size: %u payload: %s]\n",
-               header->cmd_name, header->payload_size, header->buff);
+               header->cmd_name, header->payload_size, payload->buff);
 
+        /*Preparing the frame of the reply*/
         rep_frame = zframe_new(NULL, sizeof(struct test_msg_rep));
         rep = (struct test_msg_rep *)zframe_data(rep_frame);
+        rep->resp_payload_size = header->payload_size;
+        rep->resp_buff = (char *)malloc(rep->resp_payload_size*sizeof(char));
+        strcpy(rep->resp_buff, payload->buff);
         // Write response data
-        for (int i = 0; i<=strlen(header->cmd_name); i++){
-          rep->resp_name[i] = header->cmd_name[i];
-        }
-        for (int i = 0; i<=strlen(header->buff); i++){
-
-        }
-        //rep->resp_name = header->cmd_name;
-        rep->resp_size = header->payload_size;
+        strcpy(rep->resp_name, header->cmd_name);
+        //strcpy(rep->resp_buff, header->buff);
+        printf("reply name %s\n", rep->resp_name);
+        printf("reply buffer %s\n", rep->resp_buff);
+        /*for (int i = 0; i<=strlen(rep->resp_buff); i++){
+          printf("%c",rep->resp_buff[i]);
+        }*/
 
         // No longer need request frame
         zframe_destroy(&req_frame);
@@ -111,6 +91,8 @@ void* msg_server_fn(void *arg)
             fprintf(stderr, "Failed to send msg with: %d\n", ret);
             goto out;
         }
+        zframe_destroy(&rep_frame);
+        //free(rep);
     }
 
 out:
@@ -119,7 +101,6 @@ out:
     printf("Thread %ld finished\n", rdata->tid);
     return NULL;
 }
-
 int main(int argc, char **argv)
 {
     int ret;

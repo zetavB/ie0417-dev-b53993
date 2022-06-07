@@ -16,6 +16,13 @@ include(utils.cmake)
 pkg_check_modules(CZMQ libczmq)
 link_directories(${CZMQ_LIBRARY_DIRS})
 include_directories(${CZMQ_INCLUDE_DIRS})
+set(INCLUDE_DIR ${CMAKE_SOURCE_DIR}/include)
+
+# Shared library
+ADD_LIB_DIRS(src)
+
+list(APPEND LIB_SOURCES ${VERSION_SOURCE})
+add_library(${LIB_NAME} SHARED ${LIB_SOURCES})
 
 # Build flags
 set(C_WARNINGS "-Wall -Wstrict-prototypes -Wshadow -Werror")
@@ -24,5 +31,5 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu11 ${C_WARNINGS}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11 ${CXX_WARNINGS}")
 
 # Example executables
-add_executable(zmq_server_rep_pthread src/zmq_server_rep_pthread.c)
-target_link_libraries(zmq_server_rep_pthread pthread ${CZMQ_LIBRARIES})
+add_executable(zmq_transport_pthread src/transport_server.c)
+target_link_libraries(zmq_transport_pthread pthread ${CZMQ_LIBRARIES})
