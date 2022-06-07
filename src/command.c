@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <signal.h>
 
 #include <eie_device/command.h>
 
@@ -19,7 +20,7 @@ struct command_info *command_create(const char *name, void *priv, command_fn exe
         free(cmd);
         return NULL;
     }
-    //strncpy(cmd->name, name, MSG_CMD_MAX_SIZE);
+
     cmd->name = name;
     cmd->priv = priv;
     cmd->execute = execute;
@@ -30,110 +31,39 @@ void command_destroy(struct command_info *cmd){
     free(cmd);
 }
 
-void command_execute(struct command_info *cmd, char *req_msg, char *ret_msg){
+void command_execute(struct command_info *cmd, char *req_msg, char **ret_msg){
     cmd->execute(cmd->name, cmd->priv, req_msg, ret_msg);
 }
 
-static void exec_func_msg(const char *name, void *priv, const char *req_msg, char *resp_msg){
-    cJSON *temp = cJSON_CreateString("Esto fue un mensaje");
-    resp_msg = temp->valuestring;
+static void exec_func_msg(const char *name, void *priv, char *req_msg, char **resp_msg){
+    cJSON *message = NULL;
+    cJSON *storage = cJSON_CreateObject();
+
+    message = cJSON_CreateString("Esto fue un mensaje");
+    cJSON_AddItemToObject(storage, "message", message);
+    *resp_msg = cJSON_Print(storage);
+    cJSON_Delete(storage);
 }
 
-static void exec_func_pipo(const char *name, void *priv, const char *req_msg, char *resp_msg){
-    cJSON *value = NULL;
-    int num_args = sizeof(priv);
-    char **tempArr = (char**)priv;
-
-    cJSON *object = cJSON_CreateObject();
-    for(int i=0; i < num_args; i++){
-        value = cJSON_CreateString(tempArr[i]);
-        char *arg_name = "arg"+i;
-        cJSON_AddItemToObject(object, arg_name, value);  
-    }
-    resp_msg = (char *)object;
-}
-
-struct command_info *message_command_create(void *json){
-    char *message = "message";
-    cJSON *arg = NULL;
-    cJSON *obj = NULL;
-    cJSON *cjson = NULL;
-    cJSON *args = NULL;
-    int num_args = 0;
-
+static void exec_func_pipo(const char *name, void *priv, char *req_msg, char **resp_msg){
     // Parse JSON from file data
-    cjson = cJSON_Parse(json);
-    if (cjson == NULL) {
+    cJSON *data = cJSON_Parse(req_msg);
+    if (data == NULL) {
         fprintf(stderr, "Failed to parse json file\n");
-        return NULL;
+    }else{
+        *resp_msg = cJSON_Print(data);
     }
-
-    args = cJSON_GetObjectItem(cjson, "Arguments");
-    if (args == NULL) {
-        fprintf(stderr, "Failed to read argument array: %s\n", cJSON_GetErrorPtr());
-        return NULL;
-    }
-
-    num_args = cJSON_GetArraySize(args);
-    char* results[num_args];
-    for(int i = 0; i < num_args; i++){
-        char *value;
-        arg = cJSON_GetArrayItem(args, i);
-
-        // Read arg value from JSON
-        obj = cJSON_GetObjectItem(arg, "value");
-        if (obj == NULL) {
-            fprintf(stderr, "Failed to read argument value: %s\n", cJSON_GetErrorPtr());
-            return NULL;
-        }
-        value = cJSON_GetStringValue(obj);
-        results[i] = value;
-    }
-    cJSON_Delete(cjson);
-    cJSON_Delete(args);
-    cJSON_Delete(arg);
-    cJSON_Delete(obj);
-    void *ptr = results;
-    return command_create(message, ptr, exec_func_msg);
+    cJSON_Delete(data);
 }
 
-struct command_info *ping_pong_command_create(void *json){
+struct command_info *message_command_create(void *priv){
+    char *message = "message";
+
+    return command_create(message, priv, exec_func_msg);
+}
+
+struct command_info *ping_pong_command_create(void *priv){
     char *ping_pong = "ping_pong";
 
-    cJSON *cjson = NULL;
-    cJSON *args = NULL;
-    int num_args = 0;
-    // Parse JSON from file data
-    cjson = cJSON_Parse(json);
-    if (cjson == NULL) {
-        fprintf(stderr, "Failed to parse json file\n");
-        return NULL;
-    }
-
-    args = cJSON_GetObjectItem(cjson, "Arguments");
-    if (args == NULL) {
-        fprintf(stderr, "Failed to read argument array: %s\n", cJSON_GetErrorPtr());
-        return NULL;
-    }
-
-    num_args = cJSON_GetArraySize(args);
-    char* results[num_args];
-    for(int i = 0; i < num_args; i++){
-        cJSON *arg, *obj;
-        char *value;
-        arg = cJSON_GetArrayItem(args, i);
-
-        // Read arg value from JSON
-        obj = cJSON_GetObjectItem(arg, "value");
-        if (obj == NULL) {
-            fprintf(stderr, "Failed to read argument value: %s\n", cJSON_GetErrorPtr());
-            return NULL;
-        }
-        value = cJSON_GetStringValue(obj);
-        results[i] = value;
-    }
-
-    void *ptr;
-    ptr = results;
-    return command_create(ping_pong, ptr, exec_func_pipo);
+    return command_create(ping_pong, priv, exec_func_pipo);
 }

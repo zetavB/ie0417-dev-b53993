@@ -4,7 +4,7 @@
 #include <cjson/cJSON.h>
 
 /** Type of the function that a command can execute */
-typedef void (*command_fn)(const char *name, void *priv, const char *req_msg, char *resp_msg);
+typedef void (*command_fn)(const char *name, void *priv, char *req_msg, char **resp_msg);
 
 struct command_info {
     /** Private data to pass to the execute function */
@@ -33,12 +33,12 @@ struct command_info *command_create(const char *name, void *priv, command_fn exe
  * A command encapsulates the information required to
  * execute a command function.
  *
- * @param json    JSON formatted input string
+ * @param priv    Private attributes
  *
  * @return Pointer to a command structure.
  */
 
-struct command_info *message_command_create(void *json);
+struct command_info *message_command_create(void *priv);
 
 /**
  * Creates a ping pong command
@@ -46,18 +46,20 @@ struct command_info *message_command_create(void *json);
  * A command encapsulates the information required to
  * execute a command function.
  *
- * @param json    JSON formatted input string
+ * @param priv    Private attributes
  *
  * @return Pointer to a command structure.
  */
-struct command_info *ping_pong_command_create(void *json);
+struct command_info *ping_pong_command_create(void *priv);
 
 /**
  * Executes the command function
  *
  * @param cmd command structure.
+ * @param req_msg JSON formatted char string with input data
+ * @param ret_msg Buffer for return
  */
-void command_execute(struct command_info *cmd, char *req_msg, char *ret_msg);
+void command_execute(struct command_info *cmd, char *req_msg, char **ret_msg);
 
 /**
  * Destroys the command
