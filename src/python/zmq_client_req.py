@@ -27,7 +27,7 @@ def encode_json(file):
     return payload
 
 def main():
-    commands = ["message", "pingpong"]
+    commands = ["message", "ping_pong"]
     payload = encode_json('../config/device_cfg.json')
     payload_size = len(payload)
     #print(payload, payload_size)

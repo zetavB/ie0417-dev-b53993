@@ -25,19 +25,21 @@ struct server_data {
     zsock_t *server;
 };
 /**
- * Creates a generic command
+ * Creates a Transport Server
  *
- * A command encapsulates the information required to
- * execute a command function.
+ * Contains the necesary data to execute a transport server
  *
- * @param data    Private data to be passed to the command execute function
- * @param execute Pointer to the command execute function
+ * @param arg    Function arguments
  *
- * @return Pointer to a command structure.
+ * @return void pointer for error state
  */
 void* msg_server_fn(void *arg);
 
-
+/**
+ * Executes a Transport Server
+ *
+ * @return Error state
+ */
 int serverExec(void);
 
 #endif // TRANSPORT_SERVER_H_
