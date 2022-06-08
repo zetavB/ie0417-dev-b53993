@@ -11,6 +11,9 @@
 #include <unistd.h>
 #include <errno.h>
 #include <czmq.h>
+#include <eie_device/command.h>
+#include <eie_device/command_manager.h>
+#include "eie_device/transport_server.h"
 
 /* Message types to set in the test_msg_req type field */
 enum test_msg_type {
@@ -20,38 +23,32 @@ enum test_msg_type {
   TEST_MSG_TYPE_MAX,
 };
 
-/* Message request structure */
-struct test_msg_req {
-    uint8_t type;
-    uint32_t val;
-} __attribute__((packed));
-
-/* Message response structure */
-struct test_msg_rep {
-    uint64_t val_a;
-    uint8_t val_b;
-} __attribute__((packed));
-
-/* Server thread data */
-struct server_data {
-    pthread_t tid;
-    zsock_t *server;
-};
-
 void* msg_server_fn(void *arg)
 {
-    int ret;
+  int ret;
     struct server_data *rdata = arg;
     printf("Thread %ld started\n", rdata->tid);
 
     rdata->server = zsock_new(ZMQ_REP);
     zsock_bind(rdata->server, "tcp://*:5555");
 
+    struct CommandManager *command_manager = command_manager_create("message");
+    command_manager_command_add(command_manager, "ping_pong");
+
+    /*Pointers to the structures*/
+        struct payload *payload;
+        struct cmd_request_hdr *header;
+        struct test_msg_rep *rep;
+
     /* Loop processing messages while CZMQ is not interrupted */
     while (!zsys_interrupted) {
+
+      /*Memory allocation*/
         zframe_t *req_frame, *rep_frame;
-        struct test_msg_req *req;
-        struct test_msg_rep *rep;
+        payload = (struct payload *)calloc(1, sizeof(struct payload));
+        header = (struct cmd_request_hdr *)calloc(1, sizeof(struct cmd_request_hdr));
+        //struct payload *payload;
+        rep = (struct test_msg_rep *)calloc(1, sizeof(struct test_msg_rep));
 
         // Block waiting for a new message frame
         req_frame = zframe_recv(rdata->server);
@@ -59,17 +56,42 @@ void* msg_server_fn(void *arg)
             fprintf(stderr, "req_frame is NULL\n");
             goto out;
         }
-        req = (struct test_msg_req *)zframe_data(req_frame);
+        /*Copy the memory address of the received data in header*/
+        header = (struct cmd_request_hdr *)zframe_data(req_frame);
+        /*Memory allocation*/
+        payload->buff = (char*)malloc(header->payload_size*sizeof(char));
+        /*Calculate the offset (request size - payload_size)*/
+        payload->offset = zframe_size(req_frame) - header->payload_size;
+        printf("%i\n", payload->offset);
+        /*Copy memory from the bytestream + offset to the payload pointer*/
+        memcpy(payload->buff, zframe_data(req_frame)+payload->offset, 94);
+        if (!req_frame) {
+            fprintf(stderr, "req_frame is NULL\n");
+            goto out;
+        }
+        printf("Received request [command_name: %s, size: %u payload: %s]\n",
+               header->cmd_name, header->payload_size, payload->buff);
 
-        printf("Received request [type: %hhu, val: %u]\n",
-               req->type, req->val);
-
+        /*Preparing the frame of the reply*/
         rep_frame = zframe_new(NULL, sizeof(struct test_msg_rep));
         rep = (struct test_msg_rep *)zframe_data(rep_frame);
+        rep->resp_payload_size = header->payload_size;
+        //rep->resp_buff = (char *)malloc(rep->resp_payload_size*sizeof(char));
 
+        char **response;
+        response=(char**)calloc(1,sizeof(char**));
+
+        command_manager_cmd_send(command_manager, header->cmd_name, payload->buff, response);
+
+        strcpy(rep->resp_buff, *response);
         // Write response data
-        rep->val_a = req->val + 10;
-        rep->val_b = req->val * req->type;
+        strcpy(rep->resp_name, header->cmd_name);
+        //strcpy(rep->resp_buff, header->buff);
+        printf("reply name %s\n", rep->resp_name);
+        printf("reply buffer %s\n", rep->resp_buff);
+        /*for (int i = 0; i<=strlen(rep->resp_buff); i++){
+          printf("%c",rep->resp_buff[i]);
+        }*/
 
         // No longer need request frame
         zframe_destroy(&req_frame);
@@ -80,16 +102,23 @@ void* msg_server_fn(void *arg)
             fprintf(stderr, "Failed to send msg with: %d\n", ret);
             goto out;
         }
+        free(payload);
+        
+        zframe_destroy(&rep_frame);
+        
     }
 
 out:
     zsock_destroy(&rdata->server);
     zsys_interrupted = 1;
     printf("Thread %ld finished\n", rdata->tid);
+    command_manager_command_remove(command_manager, "message");
+    command_manager_command_remove(command_manager, "ping_pong");
+    command_manager_destroy(command_manager);
     return NULL;
 }
 
-int main(int argc, char **argv)
+int serverExec(void)
 {
     int ret;
     struct server_data rdata = {};

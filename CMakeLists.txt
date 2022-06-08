@@ -29,6 +29,10 @@ pkg_check_modules(CJSON REQUIRED libcjson>=1.7.15)
 add_definitions(${CJSON_CFLAGS})
 link_directories(${CJSON_LIBRARY_DIRS})
 include_directories(${CJSON_INCLUDE_DIRS})
+pkg_check_modules(CZMQ libczmq)
+link_directories(${CZMQ_LIBRARY_DIRS})
+include_directories(${CZMQ_INCLUDE_DIRS})
+
 
 # Shared library
 ADD_LIB_DIRS(src)
@@ -43,7 +47,7 @@ list(APPEND LIB_SOURCES ${VERSION_SOURCE})
 
 add_library(${LIB_NAME} SHARED ${LIB_SOURCES})
 
-target_link_libraries(${LIB_NAME} pthread atomic ${CJSON_LIBRARIES})
+target_link_libraries(${LIB_NAME} pthread atomic ${CJSON_LIBRARIES} ${CZMQ_LIBRARIES})
 
 set_target_properties(
   ${LIB_NAME} PROPERTIES VERSION
@@ -96,4 +100,6 @@ add_custom_command(
 )
 add_custom_target(deploy_tmp_sysroot DEPENDS ${TMP_SYSROOT_PATH})
 
-add_subdirectory(tools)
+add_executable(eie_device_server tools/eie_device_server/main.c)
+target_link_libraries(eie_device_server ${LIB_NAME})
+

@@ -37,12 +37,7 @@ struct server_data {
  */
 void* msg_server_fn(void *arg);
 
-/**
- * Executes the command function
- *
- * @param cmd command structure.
- */
-//int main(int argc, char **argv);
-//int doo(int argc, char **argv);
+
+int serverExec(void);
 
 #endif // TRANSPORT_SERVER_H_
