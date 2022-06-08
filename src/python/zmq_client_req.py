@@ -50,10 +50,12 @@ def main():
             rep = client.recv()
             offset = len(header)
             rep_command, rep_payload_size= struct.unpack('<100s i', rep[0:offset])
-            rep_payload = struct.unpack('<8s', rep[offset:len(rep)])
+            rep_payload = rep[offset:len(rep)]
             rep_command = rep_command.decode("utf-8")
-            #rep_payload = rep_payload.decode("utf-8")
+            rep_payload = rep_payload.decode("utf-8")
             int(rep_payload_size)
             print(f"Received response [command_response: {rep_command}, payload_size:{rep_payload_size}, payload: {rep_payload}]")
+            del rep_command, rep_payload
+
 if __name__ == "__main__":
     main()

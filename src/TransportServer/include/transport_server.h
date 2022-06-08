@@ -15,7 +15,7 @@ struct payload{
 struct test_msg_rep {
     char resp_name [100];
     uint32_t resp_payload_size;
-    char * resp_buff;
+    char resp_buff [100];
     //char  resp_buff[100];
 } __attribute__((packed));
 

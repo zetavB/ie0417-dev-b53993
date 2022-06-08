@@ -31,12 +31,13 @@ void* msg_server_fn(void *arg)
     rdata->server = zsock_new(ZMQ_REP);
     zsock_bind(rdata->server, "tcp://*:5555");
 
-    /* Loop processing messages while CZMQ is not interrupted */
-    while (!zsys_interrupted) {
-      /*Pointers to the structures*/
+    /*Pointers to the structures*/
         struct payload *payload;
         struct cmd_request_hdr *header;
         struct test_msg_rep *rep;
+
+    /* Loop processing messages while CZMQ is not interrupted */
+    while (!zsys_interrupted) {
 
       /*Memory allocation*/
         zframe_t *req_frame, *rep_frame;
@@ -54,7 +55,7 @@ void* msg_server_fn(void *arg)
         /*Copy the memory address of the received data in header*/
         header = (struct cmd_request_hdr *)zframe_data(req_frame);
         /*Memory allocation*/
-        payload->buff = (char *)malloc(header->payload_size*sizeof(char));
+        payload->buff = (char*)malloc(header->payload_size*sizeof(char));
         /*Calculate the offset (request size - payload_size)*/
         payload->offset = zframe_size(req_frame) - header->payload_size;
         printf("%i\n", payload->offset);
@@ -71,7 +72,8 @@ void* msg_server_fn(void *arg)
         rep_frame = zframe_new(NULL, sizeof(struct test_msg_rep));
         rep = (struct test_msg_rep *)zframe_data(rep_frame);
         rep->resp_payload_size = header->payload_size;
-        rep->resp_buff = (char *)malloc(rep->resp_payload_size*sizeof(char));
+        //rep->resp_buff = (char *)malloc(rep->resp_payload_size*sizeof(char));
+
         strcpy(rep->resp_buff, payload->buff);
         // Write response data
         strcpy(rep->resp_name, header->cmd_name);
@@ -91,8 +93,10 @@ void* msg_server_fn(void *arg)
             fprintf(stderr, "Failed to send msg with: %d\n", ret);
             goto out;
         }
+        free(payload);
+        
         zframe_destroy(&rep_frame);
-        //free(rep);
+        
     }
 
 out:
