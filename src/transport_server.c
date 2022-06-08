@@ -11,6 +11,8 @@
 #include <unistd.h>
 #include <errno.h>
 #include <czmq.h>
+#include <signal.h>
+
 #include <eie_device/command.h>
 #include <eie_device/command_manager.h>
 #include "eie_device/transport_server.h"
@@ -69,6 +71,7 @@ void* msg_server_fn(void *arg)
             fprintf(stderr, "req_frame is NULL\n");
             goto out;
         }
+        
         printf("Received request [command_name: %s, size: %u payload: %s]\n",
                header->cmd_name, header->payload_size, payload->buff);
 
@@ -102,8 +105,7 @@ void* msg_server_fn(void *arg)
             fprintf(stderr, "Failed to send msg with: %d\n", ret);
             goto out;
         }
-        free(payload);
-        
+        //free(response);
         zframe_destroy(&rep_frame);
         
     }
