@@ -139,22 +139,10 @@ void command_manager_command_remove(struct CommandManager *cmdmgr,
 
 void command_manager_cmd_send(struct CommandManager *cmdmgr,
                                          const char *name, char *json, char **return_buff){
-                                           printf("entering cmmd_send with %s\n", json);
     struct CommandHashEntry *entry = NULL;
-    //entry = (struct CommandHashEntry * )calloc(1,sizeof(struct CommandHashEntry));
-    printf("hash entry %p \n", entry );
     *return_buff = (char *)realloc(*return_buff,strlen(json)*sizeof(char));
-    printf("In command memory allocation completed %li addr: %i\n", strlen(json), **return_buff);
     HASH_FIND(hh, cmdmgr->cmd_ht, name, strlen(name), entry);
-    printf("After hash \n");
-    printf("After hash \n");
-    printf("Trying to execute, value of return buff is %p: \n", return_buff);
-    printf("Printing entry cmd: %p \n", entry->cmd);
-
-
     command_execute(entry->cmd, json, return_buff);
-    //free(entry);
-    //printf("%s Response in command\n", *return_buff);
 }
 
 void command_manager_destroy(struct CommandManager *cmdmgr){
