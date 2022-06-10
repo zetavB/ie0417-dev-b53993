@@ -32,6 +32,7 @@ void command_destroy(struct command_info *cmd){
 }
 
 void command_execute(struct command_info *cmd, char *req_msg, char **ret_msg){
+    printf("entering command execute address: %i\n", **ret_msg);
     cmd->execute(cmd->name, cmd->priv, req_msg, ret_msg);
 }
 

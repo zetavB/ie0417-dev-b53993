@@ -57,7 +57,7 @@ struct command_info *ping_pong_command_create(void *priv);
  *
  * @param cmd command structure.
  * @param req_msg JSON formatted char string with input data
- * @param ret_msg Buffer for return
+ * @param *ret_msg Buffer for return
  */
 void command_execute(struct command_info *cmd, char *req_msg, char **ret_msg);
 

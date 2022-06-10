@@ -72,29 +72,43 @@ void* msg_server_fn(void *arg)
         printf("Received request [command_name: %s, size: %u payload: %s]\n",
                header->cmd_name, header->payload_size, payload->buff);
 
-        /*Preparing the frame of the reply*/
-        rep_frame = zframe_new(NULL, sizeof(struct test_msg_rep));
-        rep = (struct test_msg_rep *)zframe_data(rep_frame);
-        rep->resp_payload_size = header->payload_size;
+
         //rep->resp_buff = (char *)malloc(rep->resp_payload_size*sizeof(char));
 
         char **response;
-        response=(char**)calloc(1,sizeof(char**));
-
+        //response=(char**)malloc(rep->resp_payload_size*sizeof(char**));
+        //printf("payload size %u \n", header->payload_size );
+        //response = (char **)calloc(header->payload_size,sizeof(char));
+        //printf("initial mem  alocation for response %li\n", header->payload_size*sizeof(char));
+        //rep->resp_buff = (char *)malloc(strlen(payload->buff)*sizeof(char));
+        //char ** response = &rep->resp_buff;
+        response = (char **)calloc(header->payload_size, sizeof(char));
         command_manager_cmd_send(command_manager, header->cmd_name, payload->buff, response);
+        /*Preparing the frame of the reply*/
+        printf("response: %s \n", *response);
+        rep->resp_buff = (char *)malloc(strlen(*response)*sizeof(char));
+        memcpy(rep->resp_buff, *response, strlen(*response));
+        printf("size of response after the method %li\n",strlen(rep->resp_buff));
+        printf("allocating mem resp buff\n");
+        //rep->resp_buff = (char *)malloc(strlen(rep->resp_buff)*sizeof(char));
 
-        strcpy(rep->resp_buff, *response);
-        // Write response data
-        strcpy(rep->resp_name, header->cmd_name);
-        //strcpy(rep->resp_buff, header->buff);
-        printf("reply name %s\n", rep->resp_name);
-        printf("reply buffer %s\n", rep->resp_buff);
-        /*for (int i = 0; i<=strlen(rep->resp_buff); i++){
-          printf("%c",rep->resp_buff[i]);
-        }*/
+        printf("size of resp buffer %li\n",strlen(rep->resp_buff)*sizeof(char));
 
-        // No longer need request frame
+        printf("after rep struct\n");
+          // No longer need request frame
         zframe_destroy(&req_frame);
+        printf("response size: %li\n", strlen(rep->resp_buff));
+        //strcpy(rep->resp_buff, *response);
+        //memcpy(rep->resp_buff, response, strlen(rep->resp_buff));
+        printf("reply buffer %s\n", rep->resp_buff);
+
+        //strcpy(rep->resp_buff, *response);
+        printf("after memcpy\n");
+        rep_frame = zframe_new(rep->resp_buff, strlen(rep->resp_buff));
+        printf("after new frame\n");
+        rep = (struct test_msg_rep *)zframe_data(rep_frame);
+        // Write response data
+        //strcpy(rep->resp_buff, header->buff);
 
         // Sending destroys the response frame
         ret = zframe_send(&rep_frame, rdata->server, 0);
@@ -102,10 +116,13 @@ void* msg_server_fn(void *arg)
             fprintf(stderr, "Failed to send msg with: %d\n", ret);
             goto out;
         }
+        printf("free memory\n");
         free(payload);
-        
+        free(response);
+        //free(rep->resp_buff);
+
         zframe_destroy(&rep_frame);
-        
+
     }
 
 out:

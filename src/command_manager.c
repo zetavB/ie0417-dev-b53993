@@ -58,7 +58,7 @@ static int command_manager_ht_create(struct CommandManager *cmdmgr, char *name){
 
      // Init head entry for command hash table
     cmdmgr->cmd_ht = NULL;
-    
+
 
     //Create sample command and add to HT
     if(strcmp(name, "message") == 0){
@@ -68,7 +68,7 @@ static int command_manager_ht_create(struct CommandManager *cmdmgr, char *name){
         char* msg = "Atribute ping_pong";
         command = ping_pong_command_create(msg);
     }
-    
+
     if(command == NULL){
         fprintf(stderr, "Failed to create command\n");
         return -1;
@@ -84,8 +84,8 @@ static int command_manager_ht_create(struct CommandManager *cmdmgr, char *name){
 
 struct CommandManager *command_manager_create(char *name){
 
-    struct CommandManager *cmdmgr = 
-        (struct CommandManager *)calloc(1, sizeof(struct CommandManager));    
+    struct CommandManager *cmdmgr =
+        (struct CommandManager *)calloc(1, sizeof(struct CommandManager));
     if(cmdmgr == NULL){
         fprintf(stderr, "Failed to allocate command manager\n");
         return NULL;
@@ -106,7 +106,7 @@ void command_manager_command_add(struct CommandManager *cmdmgr,
     struct command_info *command = NULL;
 
     struct CommandHashEntry *entry = NULL;
-    
+
     HASH_FIND(hh, cmdmgr->cmd_ht, name, strlen(name), entry);
     if(entry != NULL){
         fprintf(stderr, "Command already exists\n");
@@ -139,10 +139,22 @@ void command_manager_command_remove(struct CommandManager *cmdmgr,
 
 void command_manager_cmd_send(struct CommandManager *cmdmgr,
                                          const char *name, char *json, char **return_buff){
+                                           printf("entering cmmd_send with %s\n", json);
     struct CommandHashEntry *entry = NULL;
+    //entry = (struct CommandHashEntry * )calloc(1,sizeof(struct CommandHashEntry));
+    printf("hash entry %p \n", entry );
+    *return_buff = (char *)realloc(*return_buff,strlen(json)*sizeof(char));
+    printf("In command memory allocation completed %li addr: %i\n", strlen(json), **return_buff);
     HASH_FIND(hh, cmdmgr->cmd_ht, name, strlen(name), entry);
+    printf("After hash \n");
+    printf("After hash \n");
+    printf("Trying to execute, value of return buff is %p: \n", return_buff);
+    printf("Printing entry cmd: %p \n", entry->cmd);
+
+
     command_execute(entry->cmd, json, return_buff);
-    //printf("%s/n", *return_buff);
+    //free(entry);
+    //printf("%s Response in command\n", *return_buff);
 }
 
 void command_manager_destroy(struct CommandManager *cmdmgr){
