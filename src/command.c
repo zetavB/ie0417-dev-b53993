@@ -47,13 +47,16 @@ static void exec_func_msg(const char *name, void *priv, char *req_msg, char **re
 
 static void exec_func_pipo(const char *name, void *priv, char *req_msg, char **resp_msg){
     // Parse JSON from file data
-    cJSON *data = cJSON_Parse(req_msg);
+    //raise(SIGTRAP);
+    cJSON *data = NULL;
+    data = cJSON_Parse(req_msg);
     if (data == NULL) {
         fprintf(stderr, "Failed to parse json file\n");
     }else{
         *resp_msg = cJSON_Print(data);
+        //cJSON_Delete(data);
     }
-    cJSON_Delete(data);
+    
 }
 
 struct command_info *message_command_create(void *priv){

@@ -11,6 +11,8 @@
 #include <unistd.h>
 #include <errno.h>
 #include <czmq.h>
+#include <signal.h>
+
 #include <eie_device/command.h>
 #include <eie_device/command_manager.h>
 #include "eie_device/transport_server.h"
@@ -91,6 +93,7 @@ void* msg_server_fn(void *arg)
         /*Free memory*/
         free(payload);
         free(response);
+      
         zframe_destroy(&rep_frame);
     }
 
