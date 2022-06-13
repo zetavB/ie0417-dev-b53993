@@ -44,12 +44,11 @@ void* msg_server_fn(void *arg)
 
     /* Loop processing messages while CZMQ is not interrupted */
     while (!zsys_interrupted) {
-
-      /*Memory allocation*/
+        printf("Awaiting Request...\n");
+        /*Memory allocation*/
         zframe_t *req_frame, *rep_frame;
         payload = (struct payload *)calloc(1, sizeof(struct payload));
         header = (struct cmd_request_hdr *)calloc(1, sizeof(struct cmd_request_hdr));
-        //struct payload *payload;
         rep = (struct test_msg_rep *)calloc(1, sizeof(struct test_msg_rep));
 
         // Block waiting for a new message frame
@@ -64,50 +63,38 @@ void* msg_server_fn(void *arg)
         payload->buff = (char*)malloc(header->payload_size*sizeof(char));
         /*Calculate the offset (request size - payload_size)*/
         payload->offset = zframe_size(req_frame) - header->payload_size;
-        printf("%i\n", payload->offset);
         /*Copy memory from the bytestream + offset to the payload pointer*/
         memcpy(payload->buff, zframe_data(req_frame)+payload->offset, 94);
         if (!req_frame) {
             fprintf(stderr, "req_frame is NULL\n");
             goto out;
         }
-        
-        printf("Received request [command_name: %s, size: %u payload: %s]\n",
+        printf("\nReceived request...\n[command_name: %s, size: %u payload: %s]\n",
                header->cmd_name, header->payload_size, payload->buff);
 
-        /*Preparing the frame of the reply*/
-        rep_frame = zframe_new(NULL, sizeof(struct test_msg_rep));
-        rep = (struct test_msg_rep *)zframe_data(rep_frame);
-        rep->resp_payload_size = header->payload_size;
-        //rep->resp_buff = (char *)malloc(rep->resp_payload_size*sizeof(char));
-
+        /* Preparing a double pointer to call the cmd_send*/
         char **response;
-        response=(char**)calloc(1,sizeof(char**));
-
+        response = (char **)calloc(header->payload_size, sizeof(char));
         command_manager_cmd_send(command_manager, header->cmd_name, payload->buff, response);
-
-        strcpy(rep->resp_buff, *response);
-        // Write response data
-        strcpy(rep->resp_name, header->cmd_name);
-        //strcpy(rep->resp_buff, header->buff);
-        printf("reply name %s\n", rep->resp_name);
-        printf("reply buffer %s\n", rep->resp_buff);
-        /*for (int i = 0; i<=strlen(rep->resp_buff); i++){
-          printf("%c",rep->resp_buff[i]);
-        }*/
-
-        // No longer need request frame
+        rep->resp_buff = (char *)malloc(strlen(*response)*sizeof(char));
+        memcpy(rep->resp_buff, *response, strlen(*response));
+          // No longer need request frame
         zframe_destroy(&req_frame);
-
+        /*Preparing the frame of the reply*/
+        printf("\n Sending back... \n %s \n", rep->resp_buff);
+        rep_frame = zframe_new(rep->resp_buff, strlen(rep->resp_buff));
+        rep = (struct test_msg_rep *)zframe_data(rep_frame);
         // Sending destroys the response frame
         ret = zframe_send(&rep_frame, rdata->server, 0);
         if (ret) {
             fprintf(stderr, "Failed to send msg with: %d\n", ret);
             goto out;
         }
-        //free(response);
+        /*Free memory*/
+        free(payload);
+        free(response);
+      
         zframe_destroy(&rep_frame);
-        
     }
 
 out:
