@@ -1,3 +1,0 @@
-"""
-sensor module entry point.
-"""
