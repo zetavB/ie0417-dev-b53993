@@ -8,10 +8,10 @@ from sensor_commands.sensor import manager, sensor
 class MockSensor(sensor.Sensor):
     def __init__(self, name: str) -> None:
         super().__init__(name, "mock", "fakes")
-        self._readed = False
+        self._readed = 0
 
-    def read(self) -> bool:
-        self._readed = True
+    def read(self) -> float:
+        self._readed = 1
         return self._readed
 
     def assert_read(self) -> int:
@@ -23,7 +23,7 @@ class MockSensor(sensor.Sensor):
 
 @fixture
 def sensor_mgr():
-    file_name = "/home/dev/ws/testing_python/config/sensors_cfg.json"
+    file_name = "/home/dev/ws/src/lab4/python/testing_python/config/sensors_cfg.json"
     logging.info("Instancing a sensor manager")
     sensor_manager = manager.SensorManager(file_name)
     return sensor_manager
@@ -73,13 +73,13 @@ def test_sensor_manager_mock_sensor_create_destroy(sensor_mgr):
     logging.info("TEST MOCK CREATE-DESTROY")
     mock = MockSensor("mock")
     # Register
-    sensor_mgr.register_sensor_type(mock.name(), mock)
+    sensor_mgr.register_sensor_type(mock.name(), MockSensor)
     print("Getting supported types:", sensor_mgr.get_supported_sensor_types())
     # Create
-    # sensor_mgr.create_sensor(mock.name(), mock.type())
-    # print("Getting sensors info with mock sensor", sensor_mgr.get_sensors_info())
+    sensor_mgr.create_sensor(mock.name(), mock.type())
+    print("Getting sensors info with mock sensor", sensor_mgr.get_sensors_info())
     # Destroy
-    # sensor_mgr.destroy_sensor("mock")
+    sensor_mgr.destroy_sensor("mock")
     # UNREGISTER
     sensor_mgr.unregister_sensor_type(mock.type())
 
@@ -92,13 +92,13 @@ def test_sensor_manager_mock_sensor_read_command(sensor_mgr):
     sensor_mgr.register_sensor_type(mock.name(), MockSensor)
     # Create
     sensor_mgr.create_sensor(mock.name(), mock.type())
-    # sensor_read = sensor_mgr.create_sensor_read_cmd("mock-eie-test")
+    sensor_read = sensor_mgr.create_sensor_read_cmd(mock.name())
     # Execute
     print("EXECUTING SENSOR_READ")
-    # sensor_read.execute()
+    sensor_read.execute()
     # Assert read
-    # assert mock.assert_read() == 1, "Not read"
+    assert sensor_mgr.sensors[mock.name()].assert_read() == 1, "Not read"
     # Destroy
-    # sensor_mgr.destroy_sensor("mock-eie-test")
+    sensor_mgr.destroy_sensor(mock.name())
     # UNREGISTER
     sensor_mgr.unregister_sensor_type(mock.type())
