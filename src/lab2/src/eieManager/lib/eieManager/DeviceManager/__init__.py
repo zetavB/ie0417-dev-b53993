@@ -1,0 +1,3 @@
+"""
+device module entry point.
+"""
