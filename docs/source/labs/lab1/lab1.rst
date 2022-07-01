@@ -1,304 +1,255 @@
-*************
-Laboratorio 1
-*************
+**************************************************
+Laboratorio 1: Documentación de diseño de software
+**************************************************
+
+Requisitos previos
+==================
+* Siga las instrucciones de `Primeros pasos <../../getting-started.html>`_ para preparar el ambiente base del curso.
+* Asegurarse de tener una cuenta activa en `GitHub <https://github.com/>`_ y `Read the Docs <https://readthedocs.org/>`_. Para `Read the Docs` puede registrarse con la misma cuenta de GitHub.
+* Hacer un fork personal del repositorio `ie0417-dev <https://github.com/ezamoraa/ie0417-dev>`_. Este repositorio tiene el mismo ambiente base que `ie0417 <https://github.com/ezamoraa/ie0417>`_ pero sin las presentaciones ni enunciados del curso. Para esto puede utilizar el botón `Fork` que se encuentra en el sitio del repositorio. Para más detalles sobre este proceso puede consultar la siguiente `guía de forking <https://docs.github.com/en/get-started/quickstart/fork-a-repo>`_.
+* Clone su repositorio del fork, este lo utilizará a lo largo del curso para presentar sus laboratorios y proyectos. De ser necesario, posteriormente podrá hacer rebase del repositorio original `ie0417-dev <https://github.com/ezamoraa/ie0417-dev>`_ agregándolo como `remote` en Git.
+* Importar el proyecto de su repositorio del fork en `Read the Docs`. A la hora de asignar el nombre del proyecto en `Read the Docs` utilice el formato ``ie0417-dev-<carné UCR>`` para evitar conflictos de dominio, por ejemplo ``ie0417-dev-b47769``. Para más detalles puede consultar el siguiente `tutorial de Read the Docs <https://docs.readthedocs.io/en/stable/tutorial/>`_.
+
+Introducción
+============
+
+El objetivo de este laboratorio consiste en diseñar el software de un administrador de dispositivos interconectados en la red de una fábrica y documentarlo. Imagine un ambiente industrial de `Internet of Things` (IoT) como el siguiente:
+
+.. image:: img/factory_iot.png
+   :align: center
+
+La fábrica necesita un software centralizado que pueda enviar comandos de control y status a los diferentes computadores conectados a las máquinas. La start-up `eieLabs`, en la cual Usted trabaja como arquitecto y desarrollador principal, fue contratada para implementar este software.
+
+Después de una reunión de `brainstorming` con los gerentes e ingenieros de la fábrica, se acordó que la solución debe tener al menos dos partes: ``eieManager`` y ``eieDevice``. En esta reunión se creó siguiente bosquejo inicial del sistema:
+
+.. image:: img/eie_manager.png
+   :align: center
+
+De este diagrama es importante notar que ``Client`` es un componente externo al sistema, y que se deben utilizar protocolos de comunicación tanto entre ``Client`` y ``eieManager``, como entre ``eieManager`` y las instancias de ``eieDevice``, ya que estos corren en diferentes computadoras. Por ejemplo, ``eieManager`` se ejecuta en un servidor de la empresa y ``eieDevice`` en los diferentes dispositivos. Todos los sistemas involucrados ejecutan alguna distribución de Linux.
+
+Al consultar más detalles sobre la funcionalidad del sistema, se determinó que:
+
+* ``eieManager`` debe exponer un `Application Programming Interface (API) <https://www.mulesoft.com/resources/api/what-is-an-api>`_ para controlar los dispositivos de la fábrica desde ``Client``.
+
+* Los dispositivos pueden generar respuestas a los comandos que se deben entregar de vuelta al cliente.
+
+* Los comandos deben estar predefinidos y se pueden identificar con un nombre. Puede que ciertos dispositivos solo soporten algunos comandos.
+
+* Los comandos pueden ser dirigidos tanto a un dispositivo en específico como a un grupo de `broadcast`. Todos los dispositivos en el grupo de `broadcast` deberán recibir el mismo comando.
+
+* Al enviar comandos a un grupo de `broadcast`, ``eieManager`` debe recibir todas las respuestas de los distintos dispositivos para formar la respuesta final que se entrega a ``Client``.
+
+Por otra parte, en reuniones posteriores con los `stakeholders` de la fábrica, se identificaron los siguientes objetivos de negocio que debe cumplir el sistema para mantener una ventaja competitiva:
+
++------------------------------------------------------------------------------+------------+
+| Objetivo de negocio                                                          |  Prioridad |
++==============================================================================+============+
+| | Que el API pueda ser fácilmente consumido por otro equipo de desarrollo    | Alta       |
+| | para implementar un cliente en un App móvil con GUI. No se puede asumir    |            |
+| | que este cliente va a utilizar algún lenguaje en específico.               |            |
++------------------------------------------------------------------------------+------------+
+| | Soportar dispositivos heterogéneos, de distintos fabricantes y/o           | Alta       |
+| | características. Nuevos dispositivos deben ser sencillos de agregar y      |            |
+| | esto no debe implicar cambios en el API. Además, ciertos dispositivos y    |            |
+| | casos de uso podrían requerir nuevos protocolos de comunicación.           |            |
++------------------------------------------------------------------------------+------------+
+| | Que el sistema sea capaz de generar una amplia variedad de comandos.       | Alta       |
+| | Nuevos comandos deben ser sencillos de agregar y esto no debe implicar     |            |
+| | cambios en el API.                                                         |            |
++------------------------------------------------------------------------------+------------+
+| | Que el sistema tenga un rendimiento y escalabilidad adecuada al operar con | Media      |
+| | los dispositivos, tal que se soporte el envío de comandos a múltiples      |            |
+| | dispositivos simultáneamente en los casos de `broadcast`.                  |            |
++------------------------------------------------------------------------------+------------+
+| | Que el sistema tenga alta disponibilidad, siendo capaz de volver a su      | Media      |
+| | operación normal luego de un fallo que genere un cierre del proceso de     |            |
+| | ``eieManager``, recuperando su estado original.                            |            |
++------------------------------------------------------------------------------+------------+
+
+Consideraciones
+---------------
+
+Luego de varios días de reuniones y de meditar sobre el problema, un `sueño lúcido` le reveló las
+siguientes consideraciones (se recomienda mantener esta `revelación divina` en secreto y aplicarla a discreción):
+
+* Los objetivos de negocio del sistema están relacionados mayoritariamente con `modificabilidad <https://mv1.mediacionvirtual.ucr.ac.cr/pluginfile.php/2129314/mod_folder/content/0/modifiability_tactics-and-patterns.pdf?forcedownload=1>`_, aunque también son relevantes el rendimiento y la disponibilidad.
+
+* Una táctica importante para el rendimiento es la `concurrencia <https://web.mit.edu/6.005/www/fa14/classes/17-concurrency/>`_.
+
+* Los comandos podrían consistir del nombre de comando, un `target` y una lista de argumentos: ``(command, target, arg1=val1, ..., argN=valN)``
+
+* Si bien el protocolo de comunicación para comandos entre ``eieManager`` y ``eieDevice`` debe ser abstraido para facilitar la integración de nuevos casos de uso, podemos definir un protocolo inicial basado en `remote procedure calls (RPCs) <https://www.geeksforgeeks.org/remote-procedure-call-rpc-in-operating-system/>`_.
+
+* El principio de diseño de separación de responsabilidades es crucial para el proceso de `Attribute-Driven Design` (ADD). En el caso de ``eieManager``, se pueden definir componentes que se encarguen de distintas responsabilidades, tales como:
+
+  * ``ConfigHandler`` Configuración a partir de un archivo. Este puede incluir la lista de dispositivos soportados con su respectiva información (nombre, grupo broadcast, datos de conexión, etc).
+  * ``APIServer`` Servicio de solicitudes del cliente.
+  * ``CommandRegistry`` Registro de los comandos soportados y su información.
+  * ``DeviceManager`` Administración del ciclo de vida de los dispositivos.
+  * ``GroupManager`` Resolución de dispositivos pertenecientes a grupos `broadcast`.
+  * ``CommandInvoker`` Controla la ejecución de los comandos solicitados por el cliente.
+  * ``TransportClient`` Abstrae el protocolo de comunicación para interactuar con el dispositivo. Un derivado de este componente puede ser ``RPCClient``
+  * ``DatabaseHandler`` `Wrapper` de una base de datos para almacenar configuración y estado.
+  * Otros objetos relevantes para el diseño podrían ser ``Device``, ``Group`` y ``CommandInfo``.
+
+* En el caso de ``eieDevice``, se pueden definir componentes tales como:
+
+  * ``TransportServer`` Responde a solicitudes de comandos provenientes del ``TransportClient``.
+  * ``CommandManager`` Registro y ejecución de los comandos soportados por el dispositivo.
+  * ``Command`` Implementa la funcionalidad del comando.
+
+* `Tomar mucho café para diseñar software no es bueno para la salud, pero hay que disfrutar la vida...`
+
+Instrucciones
+=============
+A continuación se describirán las instrucciones de los apartados de este laboratorio.
 
 Planeamiento
-============
-..
-    * De manera breve, explique cómo se pueden planear los `releases` de funcionalidad del proyecto para habilitar lo más rápido posible el desarrollo en el equipo del App (externo a `eieLabs`).
+------------
 
-    * Utilice conceptos de planeamiento a largo plazo con metodologías Agile (Quiz 2).
+* De manera breve, explique cómo se pueden planear los `releases` de funcionalidad del proyecto para habilitar lo más rápido posible el desarrollo en el equipo del App (externo a `eieLabs`).
 
-* Para tomar en cuenta el equipo de desarrollo de la aplicación móvil, es importante definir milestones claros en relación a ciertos elementos del programa. Debemos preguntarnos: "Que componentes utilizaría la aplicación para comunicarse con el proyecto?". La respuesta a esto es evidentemente el API. Entonces teniendo esto en cuenta se vuelve crucial implementar la capa del API lo más pronto posible. Tomando en cuenta la metodología Agile, debemos de optimizar los elementos mas importantes como parte de los milestones para sacar un producto a mercado en un tiempo fijo. Probablemente el API no es el primer componente que tengamos listo, ya que hay que tomar en cuenta que elementos del eieManager para poder entender como se realizara la interconexión. Aun asi, si se pueden claramente definir los requerimientos funcionales del eieManager seria posible tener un release del API listo rápidamente para que el equipo aparte pueda trabajar en paralelo.
+  * Utilice conceptos de planeamiento a largo plazo con metodologías Agile (Quiz 2).
 
 Requerimientos
-==============
-* Funcionales:
-    * REQ-F01: El eieManager debe poder comunicarse con n cantidad de dispositivos del tipo eieDevice simultáneamente.
-    * REQ-F02: El eieManager debe poder enviar comandos a los dispositivos eieDevice a dispositivos específicos y también en `broadcast`.
-    * REQ-F03: El eieManager debe exponer una API para que clientes externos puedan enviar comandos y recibir respuestas de los dispositivos eieDevice.
-    * REQ-F04: Los eieDevice deben de ser capaces de recibir comandos predefinidos y poder dar una respuesta valida a cualquier comando.
-    * REQ-F05: El eieManager debe de poder reiniciar ante un fallo que genere el cierre del proceso.
-* No Funcionales:
-    * REQ-NF01: El API expuesto debe ser fácilmente ingerible tal que un equipo de desarrollo pueda preparar una aplicación móvil en paralelo.
-    * REQ-NF02: El eieManager debe soportar una amplia variedad de dispositivos, y que ademas estos se puedan agregar fácilmente sin cambios en el código.
-    * REQ-NF03: El eieManager debe ser capaz de enviar una variedad de comandos en diferentes protocolos de comunicación, y que estos ademas se puedan expander fácilmente sin cambios en el código. Inicialmente se utilizara el protocolo RPC.
-    * REQ-NF04: Se debe de priorizar el desarrollo del API para que el equipo externo que desarrolla la aplicación móvil pueda trabajar en paralelo.
-    * REQ-NF05: Los eieDevice deben de ser capaces de funcionar con diferentes protocolos de comunicación sin afectar el funcionamiento del API.
+--------------
 
-Attribute-driven Design
-=======================
-El primer paso es definir si los requerimientos obtenidos son suficientes y si están priorizados. En este caso podemos decir que si, y si. Pasando al segundo punto, es necesario separar el sistema en elementos. Escogeremos el eieManager y eieDevice como los dos elementos a descomponer para seguir el proceso.
+* Especifique una lista de requerimientos funcionales y no funcionales detallados según el apartado `5.3 Specific Requirements` del estándar `IEEE Recommended Practice for Software Requirements Specifications (Std 830-1998) <https://mv1.mediacionvirtual.ucr.ac.cr/mod/resource/view.php?id=1613826>`_.
 
-eieManager
-----------
-Primero procedemos a tomar los requerimientos y clasificarlos conforme a su importancia del punto de vista de los `stakeholders` y a un nivel de arquitectura:
+  * Asegúrese de utilizar identificadores numéricos para todos los requerimientos (ej, ``REQ-XYZ``).
 
-* REQ-F01 (H,M)
-* REQ-F02 (H,M)
-* REQ-F03 (H,H)
-* REQ-F05 (M,L)
-* REQ-NF01 (H,H)
-* REQ-NF02 (H,H)
-* REQ-NF03 (H,H)
-* REQ-NF04 (H,H)
+Attribute-driven Design (ADD)
+-----------------------------
 
-De estos elementos elegimos los siguientes como los `drivers` de la arquitectura a diseñar: REQ-F01, REQ-F02, REQ-F03, y REQ-NF03.
-El siguiente paso del proceso es escoger un concepto de diseño para cumplir los elementos elegidos. Tomando en cuenta estos requerimientos podemos decir que la mayoría de ellos se centran en la modificabilidad y flexibilidad en su uso. Esto implica que del punto de vista de los `stakeholders` lo principal es asegurarse que el sistema se pueda expander fácilmente. Tomando esto en cuenta se proponen dos patrones de diseño que pueden cumplir esta necesidad. Primero se tiene el adaptador, en este patron el eieManager funciona como un intermediario entre el API y los eieDevice. Esto con el fin de lidiar con los diferentes protocolos de ambos lados y garantizar la comunicación. El segundo patron que se propone es el mediador. Bajo este patron el eieManager funciona como el mediador entre el API y los dispositivos. SU funcionamiento es similar al adaptador excepto que provee mas libertad en los diferentes dispositivos que lo pueden llamar, y reduce la necesidad de modificar el eieManager para poder lidiar con diferentes tipos de dispositivo, ya que el adaptador adapta entre dos protocolos, no varios necesariamente.
+* Aplique la metodología de `Attribute-Driven Design` (ADD) para el diseño del sistema
 
-+------------------------+-------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+------------------------------------------------------------------------+
-|                        | Patron Adaptador                                                                                      | Patron Adaptador                                                                                                               | Patron Mediador                                                                                  | Patron Mediador                                                        |
-+========================+=======================================================================================================+================================================================================================================================+==================================================================================================+========================================================================+
-| Driver Arquitectónico  | Pros                                                                                                  | Cons                                                                                                                           | Pros                                                                                             | Cons                                                                   |
-+------------------------+-------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+------------------------------------------------------------------------+
-| REQ-F01                | Al ser un adaptador se puede fácilmente comunicar con los eieDevice fácilmente.                       | Podría requerir la instanciacion de varios eieManagers para lidiar con los diferentes dispositivos                             | Puede lidiar con los distintos dispositivos simultáneamente.                                     | Requiere mas complejidad para poder lidiar con todos simultáneamente.  |
-+------------------------+-------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+------------------------------------------------------------------------+
-| REQ-F02                | El adaptador puede enviar comandos en el protocolo esperado.                                          | Podría complicarse el broadcast dependiendo de como este diseñado el adaptador y si hay multiples protocolos de comunicación.  | Puede fácilmente enviar comandos en broadcast a multiples dispositivos.                          | N/A                                                                    |
-+------------------------+-------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+------------------------------------------------------------------------+
-| REQ-F03                | Se puede hacer la conexión entre el API y las respuestas y protocolos de transmisión de los módulos.  | Es posible que se requieran multiples adaptadores dependiendo de la implementación                                             | Puede hacer la traducción entre el API y los dispositivos.                                       | N/A                                                                    |
-+------------------------+-------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+------------------------------------------------------------------------+
-| REQ-NF03               | Puede hacer la comunicación en varios protocolos.                                                     | Podría requerir multiples instancias para lidiar con los diferentes parámetros.                                                | Se puede diseñar para lidiar con multiples protocolos que se pueden expander sin mayor problema. | N/A                                                                    |
-+------------------------+-------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------------------------------------+--------------------------------------------------------------------------------------------------+------------------------------------------------------------------------+
+  * Siga los pasos presentados en clase y utilice como referencia los papers `Attribute-Driven Design <https://mv1.mediacionvirtual.ucr.ac.cr/pluginfile.php/2129314/mod_folder/content/0/Attribute-Driven%20Design%20%28ADD%29%2C%20Version%202.0.pdf?forcedownload=1>`_ y `How Business Goals Drive Architectural Design <https://mv1.mediacionvirtual.ucr.ac.cr/pluginfile.php/2129314/mod_folder/content/0/how-business-goals-drive-architectural-design.pdf?forcedownload=1>`_.
+  * Asegúrese de justificar y priorizar al menos dos atributos de calidad relevantes para el diseño a partir de los objetivos de negocio.
+  * Se requiere al menos una iteración del proceso para cada parte del sistema (``eieManager`` y ``eieDevice``.
+  * Asegúrese de describir cómo los subsistemas o componentes diseñados cumplen con los atributos de calidad haciendo referencia a tácticas y/o patrones de diseño. Se sugiere utilizar las consideraciones presentadas en la introducción.
 
-Teniendo estos detalles en cuenta, es posible determinar que una implementación usando el patron de diseño de Mediador seria lo ideal para este componente. 
-Para el siguiente paso se deben de instanciar algunos componentes para la funcionalidad del elemento. Se eligen los siguientes componentes:
-
-* ConfigHandler: Esto se encarga de agregar y remover dispositivos soportados y proveer la information de los mismos al eieManager.
-* APIServer: Este componente se encarga de recibir las solicitudes del cliente y enviarle las respuestas de los dispositivos.
-* CommandRegistry: Esto se encarga de llevar un registro de los comandos soportados y como lidiar con ellos.
-* DeviceManager: Esto maneja los dispositivos asociados y lleva control de su ciclo de vida.
-* GroupManager: Esto se encarga de manejar las listas de distribución para grupos `broadcast`.
-* CommandInvoker: Esto controla la ejecución de los comandos enviados por el cliente.
-* TransportClient: Este abstrae el protocolo de comunicación para los dispositivos de tal manera que se pueda usar cualquier protocolo mientras pase por un proceso estándar.
-* DatabaseHandler: Este elemento funcionara para manejar una base de datos que contiene los distintos elementos a interactuar con.
-
-Pasando al siguiente paso, podemos notar que los requerimientos funcionales se alinean con nuestra solución propuesta bajo el patron de diseño elegido. Finalmente procedemos al ultimo paso que es repetir este proceso para eieDevice.
-
-eieDevice
----------
-Primero procedemos a tomar los requerimientos y clasificarlos conforme a su importancia del punto de vista de los `stakeholders` y a un nivel de arquitectura:
-
-* REQ-F04 (H,M)
-* REQ-NF05 (H,H)
-
-Escogemos estos dos elementos como `drivers` para la arquitectura a diseñar. Ahora procedemos a elegir patrones de diseño para satisfacer estos requerimientos. En particular se eligen los patrones de fachada y fabrica. Este primero funciona para abstraer la interacción con el subsistema del dispositivo y enviar datos con un formato estándar. Este segundo funciona para crear una amplia variedad de objetos usando una sola clase fabricante. Se evalúan sus pros y contras a continuación:
-
-+------------------------+-----------------------------------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------+
-|                        | Patron Fachada                                                                                                                    | Patron Fachada                                                                                       | Patron Fabrica                                                                                                        | Patron Fabrica                                                                                                                          |
-+========================+===================================================================================================================================+======================================================================================================+=======================================================================================================================+=========================================================================================================================================+
-| Driver Arquitectonico  | Pros                                                                                                                              | Cons                                                                                                 | Pros                                                                                                                  | Cons                                                                                                                                    |
-+------------------------+-----------------------------------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------+
-| REQ-F04                | Provee una capa de abstraccion para que el eieDevice reciba procese comandos estandar.                                            | Puede verse limitado en el caso de que no se defina el comportamiento ante comandos inesperados.     | La fabrica puede generar una variedad de eieDevices tal que todos puedan responder a comandos estandar particulares.  | La interaccion con ell device no tiene una capa de abstraccion necesariamente, lo cual puede llevar a dificultades.                     |
-+------------------------+-----------------------------------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------+
-| REQ-NF05               | La fachada permite una abstraccion ocmpleta del funcionamiento interno del dispositivo facilitando el procesamiento de comandos.  | Esta implementacion puede ser laboriosa para que soporte una variedad de protoclos de comunicacion.  | La fabrica permite generar eieDevices tal que se trabaje con diferentes metodos de transmision de datos.              | Se debera sobrecargar los metodoos de recibo y envio de datos de las subclases de la fabrica para lidiar con comunicacion alternativa.  |
-+------------------------+-----------------------------------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------------+
-
-Tomando en cuenta estos factores, se elije utilizar el patron de Fachada, esto con el fin de abstraer las comunicaciones lo mas posible a nivel de dispositivo. Esto permite gran flexibilidad ya que al agregar un nuevo dispositivo de cualquier tipo se puede facilmente agregar una capa de traduccion al protocolo de comunicacion estandar, permitiendo agregar dispositivos sin modificar el codigo de eieManager.
-Ahora debemos discutir las instancias de elementos del eieDevice. Se elijen las siguientes:
-
-* TransportServer: Esta es la capa de abstraccion que se encarga de comunicarse con el TransportClient de eieManager. Esto es lo que vendria siendo la Fachada elegida como patron de diseño.
-* CommandManager: Esto lleva el registro de comandos soportados por el dispositivo, llama a su ejecuccion, y lidia con comandos desconocidos. Lo ideal en este elemento seria devolver una respuesta estandarizada que corresponda a `comannd not supported` tal que la capa de abstraccion pueda comunicar esta respuesta.
-* Command: Este elemento implementa la funcionalidad especifica del comando. Esto puede ser algo desde leer una señal de temperatura de un termistor, hasta accionar un motor que inicie la mezcla en un proceso quimico. Este command debe retornar algun mensaje indicando el estado o otro dato deseado, ademas de realizar la accion.
-
-Teneiendo estas consideraciones, pasamos al siguiente paso. Podemos determinar que estas funciones directamente soportan los requerimientos planteados en el proceso para eieDevice. Con esto damos por concluido el proceso de ADD.
-
-Patrones de Diseño
-==================
-..
-  * Explique cómo se puede aplicar el patrón de diseño `Proxy <https://en.wikipedia.org/wiki/Proxy_pattern>`_ para abstraer la interacción y comunicación con los dispositivos desde ``eieManager``.
-
-    * Dentro de los componentes sugeridos en la introducción, a cuáles se les puede relacionar con este patrón?
-
-  * Explique cómo se puede aplicar el patrón de diseño `Command <https://en.wikipedia.org/wiki/Command_pattern>`_ para desacoplar los procesos de:
-
-    * Encapsular la información requerida para ejecutar comandos en dispositivos específicos.
-    * Ejecutar los comandos y esperar la respuesta correspondiente.
-
-Proxy
------
-Un proxy es una excelente opcion para implementar la capa de abstraccion entre los dispositivos y el eieManager. El proxy funciona como un intermediario que puede ejecutar funciones antes de pasarlas al eieManager. Esto permitiria, por ejemplo, recibir una repuesta de un dispositivo en algun protocolo distinto del definido inicialmente, realizar la traduccion al protocolo deseado, y pasar esta salida al eieManager. Similarmente se puede implementar esto en la otra direccion, permitiendo que el eieManager envie un comando con RPC, por ejemplo, a un dispositivo que utilice un protocolo distinto sin que ninguno de los dos se de cuenta de que esto esta sucediendo. Los componentes a relacionarse serian ambos los eieDevice, como el posible Client. Es importante tener esta capa de abstraccion entre ambos debido a los requerimientos de modificabilidad del cliente. Al tener abstraccion entre los dispositivos y el eieManager se puede agregar una amplia variedad de dispositivos. Similarmente, con el cliente el API va a funcionar como esta capa Proxy de abstraccion. Esto permitira a cualquier cliente que programe un equipo en paralelo pueda acoplarse con el resto del sistema, siempre y cuando se utilice el API como capa de traduccion.
-
-Command
--------
-El patron de diseño Command se puede aplicar para desacoplar los procesos de ejecutar y enviar la informacion sobre comandos a dispositivos, y recibir las respuestas corresponientes. Para lograr esto es necesario que una clase command exista que contenga toda la informacion sobre un comando. Este elemento es lo que se comunicara al eieDevice para pedir una respuesta o que se ejecute alguna accion. Al contener toda la infromacion del comando, esto puede permitir abstraer la funcion para diferentes tipos de dispositivos, y tambien permite escalar el sistema facilmente. Al llegar esta señal generica de command al dispositivo este puede determinar si el comando es uno que soporta, ejecutar alguna accion, y retornar la respuesta correcta ante ese comando. En el caso de ser un comando no soportado se podria estandarizar una respuesta de `command not supported` que le indique al cliente que el comando que envio a este dispositivo no es soportado.
-
-Diagramas UML
-=============
-
-Diagrama de Clases
+Patrones de diseño
 ------------------
 
-.. uml::
+* Explique cómo se puede aplicar el patrón de diseño `Proxy <https://en.wikipedia.org/wiki/Proxy_pattern>`_ para abstraer la interacción y comunicación con los dispositivos desde ``eieManager``.
 
-  @startuml
+  * Dentro de los componentes sugeridos en la introducción, a cuáles se les puede relacionar con este patrón?
 
-  title Diagrama de Clases
+* Explique cómo se puede aplicar el patrón de diseño `Command <https://en.wikipedia.org/wiki/Command_pattern>`_ para desacoplar los procesos de:
 
+  * Encapsular la información requerida para ejecutar comandos en dispositivos específicos.
+  * Ejecutar los comandos y esperar la respuesta correspondiente.
 
-  class EieManager {
-    +void loadConfig()
-    +command sendCommand(command)
+Diagramas UML
+-------------
+* Implemente los diagrama de clases de los componentes de ``eieManager`` y ``eieDevice``.
 
-  }
+  * Asegúrese de representar relaciones de uso, composición y generalización entre los diferentes subsistemas y objetos. La generalización es especialmente importante para representar el polimorfismo necesario al tener que soportar diferentes dispositivos (``Device``), protocolos de transporte (``TransportClient``) y comandos (``Command``), de manera genérica.
+  * No describa de forma detallada los atributos ni los métodos de las clases. Sí incluya los nombres de algunos métodos relevantes para la interacción entre los subsistemas.
 
-  class EieDevice {
-    +command execute(command c)
+* Implemente diagramas de secuencia que muestren la interacción completa entre los subsistemas de ``eieManager`` y ``eieDevice`` para los siguientes escenarios:
 
-  }
+  * El cliente envía un comando a un dispositivo específico.
+  * El cliente envía un comando a un grupo de broadcast.
 
-  class ConfigHandler {
-    +void addDevice()
-    +void removeDevice()
-    +string* protocol
-    +string* devices
+.. note::
 
-  }
-
-  class APIServer {
-    +void sendCommand(command)
-    +void recieveResponse(command)
-
-  }
-
-  class CommandRegistry {
-    +string commandResponse(command)
-    +string* commands
-
-  }
-
-  class DeviceManager {
-    +database devices
-
-  }
-
-  class GroupManager {
-    +database groups
-
-  }
-
-  class CommandInvoker {
-    +void execute(command)
-
-  }
-
-  class TransportClient {
-    +void convertToRPC(command)
-    +void convertFromRPC(command)
-    +void send(command)
-    +command recieve()
-
-  }
-
-  class DatabaseHandler {
-    +void addItem(name, protocol, position)
-    +void deleteItem(name)
-    +database data
-    +item get(name)
-
-  }
-
-  class TransportServer {
-    +void convertToRPC(command)
-    +void convertFromRPC(command)
-    +void send(command)
-    +void recieve(command)
-
-  }
-
-  class CommandManager {
-    +command processCommand(command)
-    +string* supportedCommands
-    }
-
-  EieManager <|- EieDevice
-  TransportServer *.. EieDevice
-  EieManager <.. TransportClient
-  CommandManager *.. Command
-  Command <.. TransportServer
-  Command <.. TransportClient
-  TransportClient <|- TransportServer
-  DeviceManager <.. EieDevice
-  Command <|- CommandRegistry
-  CommandInvoker <.. APIServer
-  Command <.. CommandInvoker
-  EieManager <|- APIServer
-  GroupManager <.. EieManager
-  GroupManager <.. EieDevice
-  GroupManager <|- DeviceManager
-  GroupManager <.. DatabaseHandler
-  DeviceManager<.. DatabaseHandler
-  EieManager <.. ConfigHandler
-  EieManager <.. CommandManager
-  EieManager <.. CommandRegistry
-
-  @enduml
-
-Diagrama de secuencia
-=====================
-
-Cliente envia mensaje a un dispositivo
---------------------------------------
+   Para la realización de estos diagramas se debe utilizar la extensión de `PlantUML` para Sphinx. Esta extensión ya está instalada en el ambiente base. Por ejemplo:
 
 .. uml::
-  
-  @startuml
-  Client -> APIServer: Send Command(device)
-  APIServer -> CommandRegistry: Forward translated command
-  alt Command supported
-      CommandRegistry -> DeviceManager: Verify command supported and execute
-      DeviceManager -> CommandInvoker: Determine device path
-      CommandInvoker -> TransportClient: Execute command on particular device
-      TransportClient -> TransportServer: Send command over RPC
-      TransportServer -> CommandManager: Recieve command
-      CommandManager -> Command: Verify command valid and execute
-      alt Command supported
-        Command -> TransportServer: Execute command and send response
-        TransportServer -> TransportClient: Forward response
-        TransportClient -> APIServer: Forward response
-        APIServer -> Client: Translate response and forward
-      else Command not supported
-        TransportServer -> TransportClient: Send command not valid
-        TransportClient -> APIServer: Send command not valid
-        APIServer -> Client: Recieve command not valid
-  end
-        
-  else Command not supported
-      CommandRegistry -> APIServer: Send command not valid
-      APIServer -> Client: Recieve command not valid    
-  end
-  @enduml
 
-Cliente envia mensaje en broadcast
-----------------------------------
+   @startuml
+
+   title Relationships - Class Diagram
+
+
+   class Dwelling {
+     +Int Windows
+     +void LockTheDoor()
+   }
+
+   class Apartment
+   class House
+   class Commune
+   class Window
+   class Door
+
+   Dwelling <|-down- Apartment: Inheritance
+   Dwelling <|-down- Commune: Inheritance
+   Dwelling <|-down- House: Inheritance
+   Dwelling "1" *-up- "many" Window: Composition
+   Dwelling "1" *-up- "many" Door: Composition
+
+   @enduml
 
 .. uml::
 
   @startuml
-  Client -> APIServer: Send Command(device)
-  APIServer -> CommandRegistry: Forward translated command
-  alt Command supported
-      CommandRegistry -> GroupManager: Verify group, number of devices 'n', and execute
-      loop n times
-        GroupManager -> DeviceManager: Verify command supported and execute
-        DeviceManager -> CommandInvoker: Determine device path
-        CommandInvoker -> TransportClient: Execute command on particular device
-        TransportClient -> TransportServer: Send command over RPC
-        TransportServer -> CommandManager: Recieve command
-        CommandManager -> Command: Verify command valid and execute
-        alt Command supported
-          Command -> TransportServer: Execute command and send response
-          TransportServer -> TransportClient: Forward response
-          TransportClient -> DatabaseHandler: Queue up responses
-        else Command not supported
-          TransportServer -> TransportClient: Send command not valid
-          TransportClient -> DatabaseHandler: Queue up responses
+  Alice -> Bob: Authentication Request
+
+  alt successful case
+
+      Bob -> Alice: Authentication Accepted
+
+  else some kind of failure
+
+      Bob -> Alice: Authentication Failure
+      group My own label
+      Alice -> Log : Log attack start
+          loop 1000 times
+              Alice -> Bob: DNS Attack
+          end
+      Alice -> Log : Log attack end
       end
-      DatabaseHandler -> APIServer: Send responses in order
-      APIServer -> Client: Translate responses and forward
-  end
-        
-  else Command not supported
-      CommandRegistry -> APIServer: Send command not valid
-      APIServer -> Client: Recieve command not valid    
+
+  else Another type of failure
+
+    Bob -> Alice: Please repeat
+
   end
   @enduml
+
+
+
+Evaluación
+==========
+Este laboratorio se realizará preferiblemente en grupos de 2 o 3 personas.
+
+.. tip::
+
+   A pesar de distribuir la documentación entre los miembros del grupo, asegúrese de discutir el diseño y que todos los miembros entiendan los diferentes apartados. Esto es importante para su formación.
+
+Rúbrica
+-------
+
++--------------------+------------------------------------------------------------+------------+
+| Apartado           |  Criterios de evaluación                                   | Porcentaje |
++====================+============================================================+============+
+| Planeamiento       || Aplicar los conceptos de Agile y estrategias para         | 10%        |
+|                    || planeamiento a largo plazo con múltiples equipos.         |            |
++--------------------+------------------------------------------------------------+------------+
+| Requerimientos     || Aplicar las buenas prácticas de especificación            | 15%        |
+|                    || de requerimientos específicos según IEEE Std 830.         |            |
++--------------------+------------------------------------------------------------+------------+
+| ADD                || Aplicar la secuencia de pasos de ADD y justificar         | 30%        |
+|                    || correctamente las decisiones de diseño.                   |            |
++--------------------+------------------------------------------------------------+------------+
+| Patrones de diseño || Justificar correctamente la aplicabilidad de los patrones | 15%        |
+|                    || indicados, relacionando conceptos de diseño con los       |            |
+|                    || componentes relevantes.                                   |            |
++--------------------+------------------------------------------------------------+------------+
+| Diagramas UML      || Crear los diagramas de clases y secuencia utilizando      | 30%        |
+|                    || PlantUML directamente en Sphinx con reST.                 |            |
+|                    || Implementar mínimo 2 diagramas de clases (``eieManager``, |            |
+|                    || ``eieDevice``) y 2 diagramas de secuencia (`device cmd`,  |            |
+|                    || `group cmd`).                                             |            |
++--------------------+------------------------------------------------------------+------------+
+
+Revisión
+--------
+
+* Se debe demostrar con base en los autores de los commits de Git que todos los miembros del grupo trabajaron colaborativamente en el laboratorio utilizando control de versiones. De no ser así, no se asignará puntaje a los miembros que no contribuyeron (a menos que se justifique una excepción).
+* Se utilizará la fecha del último commit de `merge` de un Pull Request (PR) de GitHub que modifique la documentación del laboratorio respectivo para determinar si la entrega se realizó a tiempo.
+* Si se realizan entregas tardías, se rebajará 10% acumulativo por cada día extra (-10% primer día, -20% segundo día, etc).
+* Se revisará la página de documentación de `Read the Docs` indicada en la tarea de Mediación Virtual del laboratorio.
+* Para los grupos, sólo es necesario subir los cambios en el repositorio de uno de los miembros. Los demás miembros pueden hacer referencia a dicho repositorio y/o sincronizar los cambios en sus repositorios correspondientes.
