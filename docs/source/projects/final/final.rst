@@ -99,10 +99,13 @@ Diagramas
 
   @startuml
   participant Ditto
+  participant "eie-manager-config"
   participant "MQTT Broker"
   participant "eie-device"
-  "eie-device"->"eie-device":  Feature propery (status) update
-  "eie-device"->"MQTT Broker": Publish update
-  "MQTT Broker"-> Ditto: Subscribers update
-  "Ditto"-> Ditto: Feature update
+  "eie-device"->"MQTT Broker": Publish initial config of the Thing structure
+  "MQTT Broker"-> "MQTT Broker": Update general topic members
+  "MQTT Broker"-> "eie-manager-config": Send JSon File with the thing initial config
+  "eie-manager-config" -> "eie-manager-config": Configure access politics
+  "eie-manager-config" -> "MQTT Broker": Configure source/target conections
+  "eie-manager-config"-> Ditto: Register device through REST API
   @enduml
