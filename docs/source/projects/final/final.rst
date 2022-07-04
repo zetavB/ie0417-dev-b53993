@@ -63,11 +63,17 @@ Requerimientos
 
 Diseño de API
 +++++++++++++
-``create``
+``device_create``
+  Esta funcion se encarga de crear el ``eie_device``. Esto implica la subscripcion y publicacion de un mensaje en el topic ``request`` utilizando ``Device Discovery`` para la creacion del digital ``Twin`` en el ``eie_manager 2.0``.
 
-``destroy``
+``device_destroy``
+  Esta funcion se encarga de destruir el ``eie_device``. Esto implica la publicacion de un mensaje indicando que se va a remover el device, y la des-subscripcion del topic ``request``.
 
+``recieve_request``
+  Esta funcion se encarga de actualizar su configuracion cuando se recibe un mensaje de ``Ditto`` a traves de ``MQTT``, enviado por parte del digital ``Twin`` al modificar su propiedad ``configration``.
 
+``send_response``
+  Esta funcion se encarga de mandar mensajes de ``Ditto`` de vuelta el ``eie_manager 2.0`` utilizando ``MQTT`` para actualizar la propiedad ``status`` de su digital ``Twin``.
 
 Diagramas
 +++++++++
