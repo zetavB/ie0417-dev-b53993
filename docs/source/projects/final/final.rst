@@ -50,6 +50,16 @@ Según los requerimientos y objetivos de negocio, para la nueva arquitectura de 
 Requerimientos
 ++++++++++++++
 
+- eie-device
+   - El eie-device debe ser implementado como una estructura Thing segun el protocolo Ditto.
+   - El eie-device debe soportar la recepcion de mensajes de Ditto a traves de MQTT para actualizarse a si mismo cuando su digital Twin llama a actualizarlo utilizando un callback tras modificar su propiedad configration de parte de un API externo.
+   - El eie-device debe soportar el envio de mensajes a Ditto para actualizar su digital Twin mediante MQTT utilizando la publicacion de comandos que acctualizan el Status en un feautre del twin.
+   - El eie-device debe implementar la funcionalidad de Device Discovery donde el eie-device se subscibe a un topico especifico y publica un mensaje con el JSON correspondiente a su configuracion.
+
+- eie-manager-config
+   - asf
+   - asfd
+   - 3rd
 
 Diseño de API
 +++++++++++++
