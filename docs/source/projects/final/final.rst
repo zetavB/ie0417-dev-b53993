@@ -50,16 +50,16 @@ Según los requerimientos y objetivos de negocio, para la nueva arquitectura de 
 Requerimientos
 ++++++++++++++
 
-- eie-device
-   - El eie-device debe ser implementado como una estructura Thing segun el protocolo Ditto.
-   - El eie-device debe soportar la recepcion de mensajes de Ditto a traves de MQTT para actualizarse a si mismo cuando su digital Twin llama a actualizarlo utilizando un callback tras modificar su propiedad configration de parte de un API externo.
-   - El eie-device debe soportar el envio de mensajes a Ditto para actualizar su digital Twin mediante MQTT utilizando la publicacion de comandos que acctualizan el Status en un feautre del twin.
-   - El eie-device debe implementar la funcionalidad de Device Discovery donde el eie-device se subscibe a un topico especifico y publica un mensaje con el JSON correspondiente a su configuracion.
+- ``eie-device``
+   - El ``eie-device`` debe ser implementado como una estructura ``Thing`` segun el protocolo ``Ditto``.
+   - El ``eie-device`` debe soportar la recepcion de mensajes de ``Ditto`` a traves de ``MQTT`` para actualizarse a si mismo cuando su digital ``Twin`` llama a actualizarlo utilizando un callback tras modificar su propiedad ``configration`` de parte de un ``API`` externo.
+   - El ``eie-device`` debe soportar el envio de mensajes a ``Ditto`` para actualizar su digital ``Twin`` mediante ``MQTT`` utilizando la publicacion de comandos que actualizan el ``Status`` en un feautre del ``Twin``.
+   - El ``eie-device`` debe implementar la funcionalidad de ``Device Discovery`` donde el ``eie-device`` se subscibe a un topico especifico y publica un mensaje con el ``JSON`` correspondiente a su configuracion.
 
-- eie-manager-config
-   - asf
-   - asfd
-   - 3rd
+- ``eie-manager-config``
+   - El ``eie-manager-config`` debe configurar las poiliticas de acceso y conexiones entre source target al broker de ``MQTT`` utilizando los archivos ``JSON`` de configuracion y luego resitrando esta informacion con el ``REST API`` de ``Ditto``.
+   - El ``eie-manager-config`` debe implementar la funcionalidad de ``Device Discovery`` donde el ``eie-manager-config`` debe subscirbirse a un topic de ``request``, unicamente al iniciar el servicio, donde puede recibir solicitudes de los dispositivos.
+   - El ``eie-manager-config`` debe implementar la funcionalidad de ``Device Discovery`` donde el ``eie-manager-config`` debe publicar a un topic de ``response`` una vez que se reciba y registre una solicitud de un dispositvo y haya registrado el nuevo ``Thing`` usando el ``REST API`` de Ditto.
 
 Diseño de API
 +++++++++++++
