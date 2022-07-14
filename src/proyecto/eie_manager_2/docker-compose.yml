@@ -26,6 +26,14 @@ services:
     environment:
        TZ: Europe/Berlin
 
+  mosquitto:
+    image: eclipse-mosquitto
+    volumes:
+      - ./:/mosquitto/:rw
+    ports:
+      - 1883:1883
+      - 9001:9001
+
   policies:
     image: docker.io/eclipse/ditto-policies:${DITTO_VERSION:-latest}
     mem_limit: 512m
