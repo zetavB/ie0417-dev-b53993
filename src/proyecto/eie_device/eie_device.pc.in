@@ -1,0 +1,10 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+libdir=${prefix}/lib
+includedir=${prefix}/include
+
+Name: @LIB_NAME@
+Description: Eie_device for mqtt comms
+Version: @VERSION@
+Requires: @REQUIRED_PACKAGES@
+Libs: -L${libdir} -l@LIB_NAME@
+Cflags: -I${includedir}
