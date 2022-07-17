@@ -1,9 +1,10 @@
 cmake_minimum_required(VERSION 3.16)
+include(FetchContent)
 
-project(sensor-commands C CXX)
+project(eie_device C CXX)
 
 if (NOT LIB_NAME)
-  set (LIB_NAME sensor_commands)
+  set (LIB_NAME eie_device)
 endif()
 
 set(VERSION "0.0.1")
@@ -31,6 +32,18 @@ add_definitions(${CJSON_CFLAGS})
 link_directories(${CJSON_LIBRARY_DIRS})
 include_directories(${CJSON_INCLUDE_DIRS})
 
+# Fetch Paho MQTT C client
+set(PAHO_MQTT_RELEASE v1.3.10)
+FetchContent_Declare(
+  paho_mqtt_c
+  GIT_REPOSITORY https://github.com/eclipse/paho.mqtt.c
+  GIT_TAG        ${PAHO_MQTT_RELEASE}
+  GIT_PROGRESS   TRUE
+)
+FetchContent_MakeAvailable(paho_mqtt_c)
+
+set_target_properties(paho-mqtt3c PROPERTIES COMPILE_FLAGS "")
+
 # Shared library
 ADD_LIB_DIRS(src)
 
@@ -44,7 +57,7 @@ list(APPEND LIB_SOURCES ${VERSION_SOURCE})
 
 add_library(${LIB_NAME} SHARED ${LIB_SOURCES})
 
-target_link_libraries(${LIB_NAME} pthread atomic ${CJSON_LIBRARIES})
+target_link_libraries(${LIB_NAME} pthread atomic ${CJSON_LIBRARIES} paho-mqtt3c paho-mqtt3a)
 
 set_target_properties(
   ${LIB_NAME} PROPERTIES VERSION
