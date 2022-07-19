@@ -1,0 +1,19 @@
+{
+  "policyId": "my.test:policy",
+"attributes": {
+    "name": "octopus",
+    "type": "octopus board"
+},
+"features": {
+    "temp_sensor": {
+        "properties": {
+            "value": 0
+        }
+    },
+    "altitude": {
+        "properties": {
+            "value": 0
+        }
+    }
+}
+}
