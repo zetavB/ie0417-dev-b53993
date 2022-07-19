@@ -5,12 +5,21 @@
 extern "C" {
 #endif
 
+/** Type of the function that a device can execute */
+typedef void (*device_fn)(const char *name, char *features, char *resp_msg);
+
+/** Structure holding callback function and function name */
+struct FunctionInfo {
+    const char *name;
+    device_fn execute;
+};
 
 /** Structure with MQTT configuration parameters in JSON format */
 struct EieDeviceConfig {
     /** JSON with mqtt configuration */
     char * configJson;
 };
+
 
 /**
  * Creates a eie_device

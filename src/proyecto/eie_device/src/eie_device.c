@@ -1,17 +1,27 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <assert.h>
 
 #include "MQTTClient.h"
 #include <cjson/cJSON.h>
+#include <eie_device/external/uthash.h>
 
 #include <eie_device/eie_device.h>
+
+/** Entry structure to support adding commands to an UT hash table */
+struct DeviceHashEntry {
+    /** Callback function container structure */
+    FunctionInfo function;
+    /** Hash handle for hash table*/
+    UT_hash_handle hh;
+};
 
 /** EieDevice structure */
 struct EieDevice {
     /** MQTT Client */
     MQTTClient *client;
+    /** Hash table */
+    struct DeviceHashEntry dHE_ht;
     /** JSON containing Ditto features */
     char *features;
 };
@@ -28,13 +38,10 @@ struct EieDevice * eie_device_create(struct EieDeviceConfig *cfg){
                         MQTTCLIENT_PERSISTENCE_NONE, NULL);
     conn_opts.keepAliveInterval = 20;
     conn_opts.cleansession = 1;
-    ASSERT_NE(device->client, nullptr);
 
     ret = MQTTClient_setCallbacks(device->client, NULL, eie_device_conn_lost_cb, eie_device_msg_arrived_cb, eie_device_msg_delivered_cb);
-    ASSERT_EQ(ret, 0);
 
     ret = MQTTClient_connect(device->client, &conn_opts);
-    ASSERT_EQ(ret, MQTTCLIENT_SUCCESS) << "Failed to connect, ret: " << ret << std::endl;
     
     return device;
 }
@@ -43,7 +50,6 @@ int eie_device_destroy(struct EieDevice *device){
     int ret;
 
     ret = MQTTClient_disconnect(device->client, 10000);
-    ASSERT_EQ(ret, MQTTCLIENT_SUCCESS);
 
     MQTTClient_destroy(&(device->client));
     free(device);
@@ -58,7 +64,6 @@ int eie_device_start(struct EieDevice *device){
 
     printf("Subscribing to topic %s\nfor client %s using QoS%d\n\n", topic, CLIENTID, QOS);
     ret = MQTTClient_subscribe(device->client, topic, QOS);
-    ASSERT_EQ(ret, 0);
     
     return ret;
 }
@@ -75,7 +80,6 @@ int eie_device_send_message(struct EieDevice *device, char *msgJson){
     int deliveredtoken = 0;
 
     ret = MQTTClient_publishMessage(device->client, "eie_device/tests", &pubmsg, &token);
-    ASSERT_EQ(ret, MQTTCLIENT_SUCCESS);
 
     printf("Waiting for publication");
     while(deliveredtoken != token);
