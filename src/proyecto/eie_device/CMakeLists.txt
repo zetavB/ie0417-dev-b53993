@@ -13,6 +13,7 @@ set(VERSION "0.0.1")
 if (NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
 endif()
+set(CMAKE_BUILD_TYPE Debug)
 message(STATUS "Current build type: ${CMAKE_BUILD_TYPE}")
 
 # Include rules
@@ -21,7 +22,7 @@ include(tools/cmake/utils.cmake)
 include(CTest)
 
 # Build flags
-set(C_WARNINGS "-Wall -Wstrict-prototypes -Wshadow -Werror")
+
 set(CXX_WARNINGS "-Wall -Wshadow -Werror")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu11 ${C_WARNINGS}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=gnu++11 ${CXX_WARNINGS}")

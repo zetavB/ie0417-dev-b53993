@@ -6,129 +6,42 @@
 #include <errno.h>
 #include <linux/limits.h>
 
+#include <cjson/cJSON.h>
+
 #include <eie_device/version.h>
 #include <eie_device/eie_device.h>
 
-static int basic_command_experiment(void)
-{
-    int ret;
-
-    struct CommandRunnerConfig cmd_runner_cfg = {
-      .q_max_size = 100,
-    };
-    struct CommandRunner *cmd_runner = command_runner_create(&cmd_runner_cfg);
-    if (cmd_runner == NULL) {
-        fprintf(stderr, "Failed to create command runner\n");
-        return -1;
-    }
-    struct Command *msg_cmd = msg_command_create("This is a command test message!\n");
-    if (msg_cmd == NULL) {
-        fprintf(stderr, "Failed to create message command\n");
-        return -1;
-    }
-
-    printf("++++++++++ CommandRunner experiment ++++++++++\n");
-
-    ret = command_runner_start(cmd_runner);
-    if (ret) {
-        fprintf(stderr, "Failed to start command runner with ret=%d\n", ret);
-        return -1;
-    }
-
-    for (int i=0; i < 10; i++) {
-        ret = command_runner_send(cmd_runner, msg_cmd);
-        if (ret) {
-            fprintf(stderr, "Failed to send command to command runner with ret=%d\n", ret);
-            return -1;
-        }
-    }
-
-    ret = command_runner_stop(cmd_runner);
-    if (ret) {
-        fprintf(stderr, "Failed to stop command runner with ret=%d\n", ret);
-        return -1;
-    }
-
-    command_destroy(msg_cmd);
-    command_runner_destroy(cmd_runner);
-
-    return 0;
+void testCallback(const char *name, char *features, char *resp_msg){
+    printf("test success");
 }
 
-static int sensor_command_experiment(const char *cfg_filename)
-{
-    int ret;
-    struct SensorManagerConfig smgr_cfg = {};
-    struct SensorManager *smgr = NULL;
-    struct Command *cmd = NULL;
+int startupTest(){
+    struct EieDevice *device;
+    struct FunctionInfo *info;
+    char *testJson;
 
-    #define NUM_SENSORS 5
+    struct EieDeviceConfig *cfg =
+        (struct EieDeviceConfig *)calloc(1, sizeof(struct EieDeviceConfig));
+    
 
-    const char *sensor_names[NUM_SENSORS] = {
-      "level-eie202",
-      "temp-eie206",
-      "temp-eie204",
-      "level-eie301",
-      "temp-eie208",
-    };
-    struct Command *commands[NUM_SENSORS] = {};
+    cJSON *address = NULL;
+    cJSON *id = NULL;
 
-    struct CommandRunnerConfig cmd_runner_cfg = {
-      .q_max_size = 100,
-    };
-    struct CommandRunner *cmd_runner = command_runner_create(&cmd_runner_cfg);
-    if (cmd_runner == NULL) {
-        fprintf(stderr, "Failed to create command runner\n");
-        return -1;
-    }
+    cJSON *config = cJSON_CreateObject();
+    address = cJSON_CreateString("127.0.0.1");
+    id = cJSON_CreateString("mosquitto");
 
-    printf("++++++++++ SensorManager experiment ++++++++++\n");
+    cJSON_AddItemToObject(config, "address", address);
+    cJSON_AddItemToObject(config, "id", id);
+    testJson = cJSON_Print(config);
+    cJSON_Delete(config);
+    cfg->configJson = testJson;
 
-    ret = command_runner_start(cmd_runner);
-    if (ret) {
-        fprintf(stderr, "Failed to start command runner with ret=%d\n", ret);
-        return -1;
-    }
+    info = info_create("testCallback", testCallback);
+    device = eie_device_create(cfg, info);
+    eie_device_start(device);
+    eie_device_destroy(device);
 
-    smgr_cfg.cfg_filename = cfg_filename;
-    smgr = sensor_manager_create(&smgr_cfg);
-    if (smgr == NULL) {
-        fprintf(stderr, "Failed to create sensor manager\n");
-        return -1;
-    }
-
-    for (int i=0; i < NUM_SENSORS; i++) {
-        const char *name = sensor_names[i];
-        if (strlen(name) == 0) break;
-
-        cmd = sensor_manager_read_cmd_create(smgr, name);
-        if (cmd != NULL) {
-            commands[i] = cmd;
-            ret = command_runner_send(cmd_runner, cmd);
-            if (ret) {
-                fprintf(stderr, "Failed to send command to command runner with ret=%d\n", ret);
-                return -1;
-            }
-        } else {
-            printf("Failed to get read command for sensor with name %s\n", name);
-        }
-    }
-
-    ret = command_runner_stop(cmd_runner);
-    if (ret) {
-        fprintf(stderr, "Failed to stop command runner with ret=%d\n", ret);
-        return -1;
-    }
-
-    for (int i=0; i < NUM_SENSORS; i++) {
-        command_destroy(commands[i]);
-        commands[i] = NULL;
-    }
-
-    sensor_manager_destroy(smgr);
-    command_runner_destroy(cmd_runner);
-
-    return 0;
 }
 
 int main(int argc, char **argv) {
@@ -148,17 +61,7 @@ int main(int argc, char **argv) {
                 return -EINVAL;
         }
     }
-
-    // Check library version
-    ret = sensor_commands_version(&version);
-    if (ret) return ret;
-    printf("lib version: %s\n", version);
-
-    // Experiment with basic commands
-    basic_command_experiment();
-
-    // Experiment with sensor commands
-    sensor_command_experiment(cfg_filename);
-
+    printf("this might be working");
+    startupTest();
     return ret;
 }
