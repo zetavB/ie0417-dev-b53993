@@ -12,7 +12,7 @@
 #include <eie_device/eie_device.h>
 
 void testCallback(const char *name, char *features, char *resp_msg){
-    printf("test success");
+    printf("test success\n");
 }
 
 int startupTest(){
@@ -61,7 +61,6 @@ int main(int argc, char **argv) {
                 return -EINVAL;
         }
     }
-    printf("this might be working");
     startupTest();
     return ret;
 }

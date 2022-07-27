@@ -31,6 +31,9 @@ struct EieDevice {
 int eie_device_msg_arrived_cb(void *context, char *topicName, int topicLen,
                               MQTTClient_message *message){
     printf("Message recieved.\n");
+    struct DeviceHashEntry *entry = NULL;
+    HASH_FIND(hh, device->dHE_ht, "testCallback", strlen("testCallback"), entry);
+    entry->function->execute("","","");
 }
 
 void eie_device_msg_delivered_cb(void *context, MQTTClient_deliveryToken dt){
@@ -40,6 +43,8 @@ void eie_device_msg_delivered_cb(void *context, MQTTClient_deliveryToken dt){
 void eie_device_conn_lost_cb(void *context, char *cause){
     printf("Connection lost.\n");
 }
+
+void eie_device_process_cb(struct EieDevice *device){}
 
 struct FunctionInfo *info_create(const char *name, device_fn execute){
     struct FunctionInfo *function =
