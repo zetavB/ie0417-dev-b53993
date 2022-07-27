@@ -27,13 +27,35 @@ struct EieDevice {
     /** JSON containing Ditto features */
     char *features;
 };
+void eie_device_parse_ditto_json(char *payload, char *features, char *topicName){
+    cJSON *feature_id = NULL;
+    cJSON *properties = NULL;
 
+    cJSON *dittoPayload = cJSON_Parse(payload);
+    feature_id = cJSON_GetObjectItemCaseSensitive(dittoPayload, topicName);
+    properties = cJSON_GetObjectItemCaseSensitive(feature_id, "properties");
+
+    strcpy(features, properties->valuestring);
+
+    cJSON_Delete(feature_id);
+    cJSON_Delete(properties);
+    cJSON_Delete(dittoPayload);
+}
 int eie_device_msg_arrived_cb(void *context, char *topicName, int topicLen,
                               MQTTClient_message *message){
     printf("Message recieved.\n");
+    struct EieDevice *tmp = (struct EieDevice*)context;
     struct DeviceHashEntry *entry = NULL;
-    HASH_FIND(hh, device->dHE_ht, "testCallback", strlen("testCallback"), entry);
-    entry->function->execute("","","");
+
+    char *json = (char*)message->payload;
+    char *features = (char *)malloc(254*sizeof(char));
+    char *response = (char *)malloc(254*sizeof(char));
+
+    eie_device_parse_ditto_json(json, features, topicName);
+
+    HASH_FIND(hh, tmp->dHE_ht, topicName, strlen(topicName), entry);
+    entry->function->execute(topicName, features, response);
+    eie_device_send_message(tmp, response);
 }
 
 void eie_device_msg_delivered_cb(void *context, MQTTClient_deliveryToken dt){
@@ -43,8 +65,6 @@ void eie_device_msg_delivered_cb(void *context, MQTTClient_deliveryToken dt){
 void eie_device_conn_lost_cb(void *context, char *cause){
     printf("Connection lost.\n");
 }
-
-void eie_device_process_cb(struct EieDevice *device){}
 
 struct FunctionInfo *info_create(const char *name, device_fn execute){
     struct FunctionInfo *function =
@@ -138,7 +158,7 @@ struct EieDevice * eie_device_create(struct EieDeviceConfig *cfg, struct Functio
     char *tmp1 = (char *)malloc(60*sizeof(char));
 
     MQTTClient *client = (MQTTClient *)malloc(sizeof(MQTTClient));
-    int qos = 0;
+    
     data = cJSON_Parse(device->features);
     if (data == NULL) {
         fprintf(stderr, "Failed to parse json file\n");
@@ -150,14 +170,13 @@ struct EieDevice * eie_device_create(struct EieDeviceConfig *cfg, struct Functio
         strcpy(tmp1, id->valuestring);
     }
     cJSON_Delete(data);
-    raise(SIGTRAP);
     MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
 
     MQTTClient_create((client), tmp0, tmp1, MQTTCLIENT_PERSISTENCE_NONE, NULL);
     conn_opts.keepAliveInterval = 20;
     conn_opts.cleansession = 1;
 
-    ret = MQTTClient_setCallbacks(*client, NULL, eie_device_conn_lost_cb, eie_device_msg_arrived_cb, eie_device_msg_delivered_cb);
+    ret = MQTTClient_setCallbacks(*client, device, eie_device_conn_lost_cb, eie_device_msg_arrived_cb, eie_device_msg_delivered_cb);
     device->client = client;
     
     return device;
@@ -165,7 +184,6 @@ struct EieDevice * eie_device_create(struct EieDeviceConfig *cfg, struct Functio
 
 int eie_device_destroy(struct EieDevice *device){
     int ret;
-    raise(SIGTRAP);
 
     MQTTClient_destroy((device->client));
     eie_device_ht_destroy(device);
@@ -176,15 +194,18 @@ int eie_device_destroy(struct EieDevice *device){
 
 int eie_device_start(struct EieDevice *device){
     int ret = 0;
-    
-    /* ret = MQTTClient_connect(device->client, &conn_opts);
+    MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
+    conn_opts.keepAliveInterval = 20;
+    conn_opts.cleansession = 1;
+    //ret = MQTTClient_connect(device->client, &conn_opts);
 
     const char topic[100] = "example/test";
     char ch;
+    int qos = 0;
 
-    printf("Subscribing to topic %s\nfor client %s using QoS%d\n\n", topic, id->valuestring, qos);
-    ret = MQTTClient_subscribe(device->client, topic, qos);
-     */
+    printf("Subscribing to topic %s\nfor client using QoS %d\n\n", topic, qos);
+    //ret = MQTTClient_subscribe(device->client, topic, qos);
+    
     return ret;
 }
 
