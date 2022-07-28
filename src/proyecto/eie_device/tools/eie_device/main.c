@@ -63,6 +63,13 @@ int startupTest(){
     info = info_create("testCallback", testCallback);
     device = eie_device_create(cfg, info);
     eie_device_start(device);
+    char ch;
+    printf("Press Q<Enter> to quit\n");
+    do
+    {
+        ch = getchar();
+    } while(ch!='Q' && ch != 'q');
+    printf("Exiting execution\n");
     eie_device_destroy(device);
 
 }

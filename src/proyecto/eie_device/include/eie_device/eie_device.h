@@ -1,6 +1,9 @@
 #ifndef EIE_DEVICE_H_
 #define EIE_DEVICE_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** Type of the function that a device can execute */
 typedef void (*device_fn)(const char *name, char *features, char *resp_msg);
@@ -79,5 +82,9 @@ int eie_device_stop(struct EieDevice *device);
  * @return Integer with exit code
  */
 int eie_device_send_message(struct EieDevice *device, char *msgJson);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif // EIE_DEVICE_H_
