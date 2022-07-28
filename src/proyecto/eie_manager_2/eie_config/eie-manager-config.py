@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from flask import Flask, render_template, request
 import requests
 import json
 import time
@@ -8,7 +7,7 @@ import struct
 
 url_policy = "http://localhost:8080/api/2/policies/my.test:policy"
 url_thing = "http://localhost:8080/api/2/things/my.test:octopus"
-app = Flask(__name__)
+url_conection  = "http://localhost:8080/devops/piggyback/connectivity?timeout=10000"
 
 
 def encode_json(file):
@@ -30,53 +29,71 @@ def decode_json(payload):
     return payload_decoded;
 
 
-def ditto_policy_register(url):
+def ditto_policy_create(url):
+    payload = encode_json("policy.json")
+    try:
+        r = requests.put(url, data = payload)
+        return 0
+    except:
+        return -1
+
+
+def ditto_thing_create(url):
+    payload = encode_json("policy.json")
+    try:
+        r = requests.put(url, data = payload)
+        return 0
+    except:
+        return -1
+
+
+def create_mqtt_conection(url):
+    payload = encode_json("DevOps.json")
+    try:
+        r = requests.post(url, data = payload)
+        return 0
+    except:
+        return -1
+
+
+def ditto_policy_return():
     payload = encode_json("policy.json")
     payload_decoded = decode_json(payload)
-    print("Unserialized payload\n", payload_decoded)
-    print('Serialized payload', payload)
-    try:
-        #r = requests.put(url, data = payload)
-        output = 'Sending' + payload_decoded
-        print(output)
-        return output
-    except:
-        return 'Port not available'
+    output = 'Sending' + payload_decoded
+    print(output)
+    return output
 
 
-def ditto_thing_register(url):
+def ditto_thing_return():
     payload = encode_json("thing.json")
     payload_decoded = decode_json(payload)
-    print("Unserialized payload\n", payload_decoded)
-    print('Serialized payload', payload)
-    try:
-        #r = requests.put(url, data = payload)
-        output = 'Sending' + payload_decoded
-        return output
-    except:
-        return 'Port not available'
+    output = 'Sending' + payload_decoded
+    print(output)
+    return output
 
 
-@app.route('/')
-def hello():
-    return render_template('index.html')
+def main():
+    time.sleep(10)
+    temp_return = ditto_thing_create(url_thing)
+    if( temp_return== 0):
+        print(ditto_thing_return())
+    else:
+        print('Thing configuration failed')
+    time.sleep(10)
+    temp_return = ditto_policy_create(url_policy)
+    if(temp_return== 0):
+        print(ditto_policy_return())
+    else:
+        print('Policy configuration failed')
+    time.sleep(10)
+    temp_return = create_mqtt_conection(url_conection)
+    if(temp_return== 0):
+        print('Conected')
+    else:
+        print('Conection failed')
 
-
-@app.route('/request', methods = ['POST', 'GET'])
-def send_request():
-    if request.form.get('Policy')== 'Policy':
-        return ditto_policy_register(url_policy)
-        time.sleep(2)
-    elif request.form.get('Thing') == 'Thing':
-        return ditto_thing_register(url_thing)
-        time.sleep(2)
-    #data = ditto_policy_register(url_policy)
-    #return render_template('index.html', data = data)
-
-
-if __name__ == '__main__':
-    app.run()
+main()
 
 #time.sleep(5)
-#ditto_policy_register(url_policy)
-#print(ditto_policy_register(url_policy))
+#ditto_policy_create(url_policy)
+#print(ditto_policy_create(url_policy))

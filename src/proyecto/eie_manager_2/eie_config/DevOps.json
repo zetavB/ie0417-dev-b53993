@@ -1,0 +1,31 @@
+{
+    "targetActorSelection": "/system/sharding/connection",
+    "headers": {
+    	"aggregate": false
+    },
+    "piggybackCommand": {
+        "type": "connectivity.commands:createConnection",
+        "connection": {
+            "id": "eie-config-manager-conection",
+            "connectionType": "mqtt",
+            "connectionStatus": "open",
+            "failoverEnabled": true,
+            "uri": "tcp://test.mosquitto.org:1883",
+            "sources": [{
+                "addresses": ["eie-manager/#"],
+                "authorizationContext": ["nginx:ditto"],
+                "qos": 0,
+                "filters": []
+            }],
+            "targets": [{
+                "address": "eie-manager/{{ thing:id }}",
+                "topics": [
+                "_/_/things/twin/events",
+                "_/_/things/live/messages"
+                ],
+                "authorizationContext": ["nginx:ditto"],
+                "qos": 0
+            }]
+        }
+    }
+}
