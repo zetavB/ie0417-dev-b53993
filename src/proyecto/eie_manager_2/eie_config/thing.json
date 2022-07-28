@@ -1,11 +1,11 @@
 {
-  "policyId": "my.test:policy",
+  "policyId": "eie-manager:policy",
 "attributes": {
-    "name": "octopus",
-    "type": "octopus board"
+    "name": "temp_sensor",
+    "type": "test_temp"
 },
 "features": {
-    "temp_sensor": {
+    "temp_level": {
         "properties": {
             "value": 0
         }
@@ -13,6 +13,8 @@
     "altitude": {
         "properties": {
             "value": 0
+            "min": 0
+            "max": 100
         }
     }
 }
