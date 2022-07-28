@@ -211,49 +211,64 @@ int eie_device_destroy(struct EieDevice *device){
 
 int eie_device_start(struct EieDevice *device){
     int ret = 0;
-    MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
-    conn_opts.keepAliveInterval = 20;
-    conn_opts.cleansession = 1;
-    MQTTClient_connect(*device->client, &conn_opts);
-    char *dev = "eie-manager/";
-    char *tmp = device->name;
-    char *topic;
-    asprintf(&topic,"%s%s", dev, tmp);
-    char ch;
-    int qos = 0;
+    if(device == NULL){
+        ret = -1;
+        printf("Device pointer cannot be null\n");
+    }else{
+        MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
+        conn_opts.keepAliveInterval = 20;
+        conn_opts.cleansession = 1;
+        MQTTClient_connect(*device->client, &conn_opts);
+        char *dev = "eie-manager/";
+        char *tmp = device->name;
+        char *topic;
+        asprintf(&topic,"%s%s", dev, tmp);
+        char ch;
+        int qos = 0;
 
-    printf("Subscribing to topic %s for client using QoS %d\n\n", topic, qos);
-    MQTTClient_subscribe(*device->client, topic, qos);
-    
+        printf("Subscribing to topic %s for client using QoS %d\n\n", topic, qos);
+        MQTTClient_subscribe(*device->client, topic, qos);
+    }
     return ret;
 }
 
 int eie_device_stop(struct EieDevice *device){
     int ret;
-
-    ret = MQTTClient_disconnect(*device->client, 10000);
-    if (ret) {
-        fprintf(stderr, "Failed to disconnect from MQTT client with ret=%d\n", ret);
-        return ret;
+    if(device == NULL){
+        ret = -1;
+        printf("Device pointer cannot be null\n");
+    }else{
+        ret = MQTTClient_disconnect(*device->client, 10000);
+        if (ret) {
+            fprintf(stderr, "Failed to disconnect from MQTT client with ret=%d\n", ret);
+            return ret;
+        }
     }
-    
     return ret;
 }
 
 int eie_device_send_message(struct EieDevice *device, char *msgJson){
-    int ret;
-    MQTTClient_message pubmsg = MQTTClient_message_initializer;
-    MQTTClient_deliveryToken token;
+    int ret = 0;
+    if(device == NULL){
+        ret = -1;
+        printf("Device pointer cannot be null\n");
+    }else if(msgJson == NULL){
+        ret = -1;
+        printf("Message pointer cannot be null\n");
+    }else{
+        MQTTClient_message pubmsg = MQTTClient_message_initializer;
+        MQTTClient_deliveryToken token;
 
-    pubmsg.payload = "Test";
-    pubmsg.payloadlen = strlen("Test");
-    pubmsg.qos = 0;
-    pubmsg.retained = 0;
-    int deliveredtoken = 0;
+        pubmsg.payload = "Test";
+        pubmsg.payloadlen = strlen("Test");
+        pubmsg.qos = 0;
+        pubmsg.retained = 0;
+        int deliveredtoken = 0;
 
-    ret = MQTTClient_publishMessage(*device->client, "eie_device/tests", &pubmsg, &token);
+        ret = MQTTClient_publishMessage(*device->client, "eie_device/tests", &pubmsg, &token);
 
-    printf("Waiting for publication");
-    while(deliveredtoken != token);
+        printf("Waiting for publication\n");
+        //while(deliveredtoken != token);
+    }
     return ret;
 }
