@@ -26,17 +26,40 @@ int startupTest(){
 
     cJSON *address = NULL;
     cJSON *id = NULL;
+    cJSON *feature_id = NULL;
+    cJSON *definition = NULL;
+    cJSON *properties = NULL;
+    cJSON *configuration = NULL;
+    cJSON *status = NULL;
+    cJSON *name = NULL;
 
     cJSON *config = cJSON_CreateObject();
     address = cJSON_CreateString("127.0.0.1");
     id = cJSON_CreateString("mosquitto");
+    name = cJSON_CreateString("com.eie.proyecto:testDevice:1.0");
+    feature_id = cJSON_CreateObject();
+    definition = cJSON_CreateArray();
+    properties = cJSON_CreateObject();
+    configuration = cJSON_CreateObject();
+    status = cJSON_CreateObject();
 
-    cJSON_AddItemToObject(config, "address", address);
-    cJSON_AddItemToObject(config, "id", id);
+    cJSON_AddItemToObject(config, "testFeature", feature_id);
+    cJSON_AddItemToObject(feature_id, "definition", definition);
+    cJSON_AddItemToObject(feature_id, "properties", properties);
+    cJSON_AddItemToObject(properties, "configuration", configuration);
+    cJSON_AddItemToObject(properties, "status", status);
+    cJSON_AddItemToArray(definition, name);
+
+    cJSON_AddItemToObject(configuration, "address", address);
+    cJSON_AddItemToObject(configuration, "id", id);
     testJson = cJSON_Print(config);
     cJSON_Delete(config);
     cfg->configJson = testJson;
+    printf("Feature sent:\n %s\n", testJson);
 
+    char *nameChar = (char *)malloc(12*sizeof(char));
+    nameChar = "testFeature";
+    cfg->name = nameChar;
     info = info_create("testCallback", testCallback);
     device = eie_device_create(cfg, info);
     eie_device_start(device);

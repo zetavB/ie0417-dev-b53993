@@ -154,6 +154,12 @@ struct EieDevice * eie_device_create(struct EieDeviceConfig *cfg, struct Functio
     cJSON *data = NULL;
     cJSON *address = NULL;
     cJSON *id = NULL;
+    cJSON *feature_id = NULL;
+    cJSON *definition = NULL;
+    cJSON *properties = NULL;
+    cJSON *configuration = NULL;
+    cJSON *status = NULL;
+    cJSON *name = NULL;
     char *tmp0 = (char *)malloc(60*sizeof(char));
     char *tmp1 = (char *)malloc(60*sizeof(char));
 
@@ -164,11 +170,18 @@ struct EieDevice * eie_device_create(struct EieDeviceConfig *cfg, struct Functio
         fprintf(stderr, "Failed to parse json file\n");
         return NULL;
     }else{
-        address = cJSON_GetObjectItemCaseSensitive(data, "address");
-        id = cJSON_GetObjectItemCaseSensitive(data, "id");
+        feature_id = cJSON_GetObjectItemCaseSensitive(data, cfg->name);
+        definition = cJSON_GetObjectItemCaseSensitive(feature_id, "definition");
+        properties = cJSON_GetObjectItemCaseSensitive(feature_id, "properties");
+        configuration = cJSON_GetObjectItemCaseSensitive(properties, "configuration");
+        status = cJSON_GetObjectItemCaseSensitive(properties, "status");
+        address = cJSON_GetObjectItemCaseSensitive(configuration, "address");
+        id = cJSON_GetObjectItemCaseSensitive(configuration, "id");
         strcpy(tmp0, address->valuestring);
         strcpy(tmp1, id->valuestring);
     }
+    char* display = cJSON_Print(data);
+    printf("Feature recieved:\n %s\n", display);
     cJSON_Delete(data);
     MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
 

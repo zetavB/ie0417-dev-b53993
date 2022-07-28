@@ -14,6 +14,7 @@ struct FunctionInfo {
 /** Structure with MQTT configuration parameters in JSON format */
 struct EieDeviceConfig {
     /** JSON with mqtt configuration */
+    char *name;
     char *configJson;
 };
 
