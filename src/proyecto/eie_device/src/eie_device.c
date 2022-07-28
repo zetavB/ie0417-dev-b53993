@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -20,6 +21,8 @@ struct DeviceHashEntry {
 
 /** EieDevice structure */
 struct EieDevice {
+    /** Device name */
+    char *name;
     /** MQTT Client */
     MQTTClient *client;
     /** Hash table */
@@ -181,6 +184,7 @@ struct EieDevice * eie_device_create(struct EieDeviceConfig *cfg, struct Functio
         strcpy(tmp1, id->valuestring);
     }
     char* display = cJSON_Print(data);
+    
     printf("Feature recieved:\n %s\n", display);
     cJSON_Delete(data);
     MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
@@ -191,7 +195,7 @@ struct EieDevice * eie_device_create(struct EieDeviceConfig *cfg, struct Functio
 
     ret = MQTTClient_setCallbacks(*client, device, eie_device_conn_lost_cb, eie_device_msg_arrived_cb, eie_device_msg_delivered_cb);
     device->client = client;
-    
+    device->name = cfg->name;
     return device;
 }
 
@@ -211,12 +215,14 @@ int eie_device_start(struct EieDevice *device){
     conn_opts.keepAliveInterval = 20;
     conn_opts.cleansession = 1;
     //ret = MQTTClient_connect(device->client, &conn_opts);
-
-    const char topic[100] = "example/test";
+    char *dev = "eie-manager/";
+    char *tmp = device->name;
+    char *topic;
+    asprintf(&topic,"%s%s", dev, tmp);
     char ch;
     int qos = 0;
 
-    printf("Subscribing to topic %s\nfor client using QoS %d\n\n", topic, qos);
+    printf("Subscribing to topic %s for client using QoS %d\n\n", topic, qos);
     //ret = MQTTClient_subscribe(device->client, topic, qos);
     
     return ret;
