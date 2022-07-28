@@ -1,7 +1,7 @@
 {
   "policyId": "eie-manager:policy",
 "attributes": {
-    "name": "temp_sensor",
+    "name": "testDevice",
     "type": "test_temp"
 },
 "features": {

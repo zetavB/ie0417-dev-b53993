@@ -10,7 +10,7 @@
             "connectionType": "mqtt",
             "connectionStatus": "open",
             "failoverEnabled": true,
-            "uri": "tcp://test.mosquitto.org:1883",
+            "uri": "tcp://mosquitto:1883",
             "sources": [{
                 "addresses": ["eie-manager/#"],
                 "authorizationContext": ["nginx:ditto"],
