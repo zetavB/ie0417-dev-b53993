@@ -34,7 +34,7 @@ int startupTest(){
     cJSON *name = NULL;
 
     cJSON *config = cJSON_CreateObject();
-    address = cJSON_CreateString("127.0.0.1");
+    address = cJSON_CreateString("tcp://mosquitto:1883");
     id = cJSON_CreateString("mosquitto");
     name = cJSON_CreateString("com.eie.proyecto:testDevice:1.0");
     feature_id = cJSON_CreateObject();

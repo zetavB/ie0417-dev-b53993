@@ -214,7 +214,7 @@ int eie_device_start(struct EieDevice *device){
     MQTTClient_connectOptions conn_opts = MQTTClient_connectOptions_initializer;
     conn_opts.keepAliveInterval = 20;
     conn_opts.cleansession = 1;
-    //ret = MQTTClient_connect(device->client, &conn_opts);
+    MQTTClient_connect(*device->client, &conn_opts);
     char *dev = "eie-manager/";
     char *tmp = device->name;
     char *topic;
@@ -223,7 +223,7 @@ int eie_device_start(struct EieDevice *device){
     int qos = 0;
 
     printf("Subscribing to topic %s for client using QoS %d\n\n", topic, qos);
-    //ret = MQTTClient_subscribe(device->client, topic, qos);
+    MQTTClient_subscribe(*device->client, topic, qos);
     
     return ret;
 }
@@ -231,7 +231,7 @@ int eie_device_start(struct EieDevice *device){
 int eie_device_stop(struct EieDevice *device){
     int ret;
 
-    ret = MQTTClient_disconnect(device->client, 10000);
+    ret = MQTTClient_disconnect(*device->client, 10000);
     if (ret) {
         fprintf(stderr, "Failed to disconnect from MQTT client with ret=%d\n", ret);
         return ret;
@@ -251,7 +251,7 @@ int eie_device_send_message(struct EieDevice *device, char *msgJson){
     pubmsg.retained = 0;
     int deliveredtoken = 0;
 
-    ret = MQTTClient_publishMessage(device->client, "eie_device/tests", &pubmsg, &token);
+    ret = MQTTClient_publishMessage(*device->client, "eie_device/tests", &pubmsg, &token);
 
     printf("Waiting for publication");
     while(deliveredtoken != token);
